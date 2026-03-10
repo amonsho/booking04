@@ -5,6 +5,7 @@ from app.models.conf import BaseModelClass
 class Room(BaseModelClass):
     __tablename__ = "rooms"
 
+    
     title = Column(String, nullable=False)
     price = Column(Integer)
 
