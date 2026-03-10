@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, Date
 from sqlalchemy.orm import relationship
-from models.conf import BaseModelClass
+from app.models.conf import BaseModelClass
 
 class Booking(BaseModelClass):
     __tablename__ = "bookings"

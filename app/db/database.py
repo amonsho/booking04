@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Declarative_base
+from sqlalchemy.orm import declarative_base
 
 DATABASE_URL = "sqlite:///./booking.db"
 
@@ -8,5 +8,4 @@ engine = create_engine(
     echo=True
 )
 
-class Base(Declarative_base):
-    pass
+Base = declarative_base()
