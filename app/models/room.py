@@ -8,5 +8,6 @@ class Room(BaseModelClass):
     hotel_id = Column(Integer, ForeignKey("hotels.id"))
     room_type = Column(String)
     price = Column(Float)
-
+    
+    bookings = relationship("Booking", back_populates="room")
     hotel = relationship("Hotel", back_populates="rooms")
