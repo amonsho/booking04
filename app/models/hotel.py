@@ -4,6 +4,8 @@ from .conf import BaseModelClass
 
 class Hotel (BaseModelClass):
     
+    __tablename__ = "hotels"
+    
     photo = Column(String,nullable=False)
     name = Column(String,nullable=False)
     city = Column(String,nullable=False)
