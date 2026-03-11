@@ -1,9 +1,15 @@
 import asyncio
 from fastapi import FastAPI
 from app.db.database import engine, Base
+<<<<<<< HEAD
 from app.models import user, room, booking, hotel
+=======
+from app.models import user, room, booking
+from app.api.hotel_router import hotel as hotel_router
+>>>>>>> main
 
 app = FastAPI()
+app.include_router(hotel_router)
 
 @app.on_event("startup")
 async def init_models():
