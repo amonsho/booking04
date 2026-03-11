@@ -1,11 +1,16 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = "sqlite:///./booking.db"
+from app.core.config import settings
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=True
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=True,
+    future = True
 )
 
 Base = declarative_base()
+
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
