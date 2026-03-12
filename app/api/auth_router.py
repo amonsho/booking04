@@ -42,7 +42,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
-    # Ищем пользователя по email (username в форме)
+    
     result = await db.execute(
         select(User).where(User.email == form_data.username)
     )
@@ -54,7 +54,7 @@ async def login(
             detail="Invalid credentials"
         )
 
-    # Создаём JWT токен
+    
     token = create_access_token({"sub": str(db_user.id)})
 
     return {"access_token": token, "token_type": "bearer"}
