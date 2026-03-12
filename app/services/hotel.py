@@ -1,36 +1,46 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 
 from app.models.hotel import Hotel
 from app.schemas.hotel import HotelCreate
-from app.db.session import get_db
 
 
-async def create_hotel(hotel: HotelCreate, db: AsyncSession = Depends(get_db)):
+# доболения Hotel 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 
-    result = await db.execute(
-        select(Hotel).where(
-            Hotel.name == hotel.name,
-            Hotel.city == hotel.city
+class HotelService:
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def create_hotel(self, hotel: HotelCreate):
+
+        result = await self.db.execute(
+            select(Hotel).where(
+                Hotel.name == hotel.name,
+                Hotel.city == hotel.city
+            )
         )
-    )
 
-    hotel_search = result.scalar_one_or_none()
+        hotel_search = result.scalar_one_or_none()
 
-    if hotel_search:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Отель уже существует в этом городе"
-        )
+        if hotel_search:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Отель уже существует в этом городе"
+            )
 
-    new_hotel = Hotel(**hotel.model_dump())
+        new_hotel = Hotel(**hotel.model_dump())
 
-    db.add(new_hotel)
-    await db.commit()
-    await db.refresh(new_hotel)
+        self.db.add(new_hotel)
+        await self.db.commit()
+        await self.db.refresh(new_hotel)
 
-    return new_hotel
-   
+        return new_hotel
     
+    
+
     
