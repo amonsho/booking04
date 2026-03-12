@@ -1,16 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
-<<<<<<< HEAD
-=======
 
->>>>>>> 0af0a20 (fix)
+
+
+
 from app.models.hotel import Hotel
 from app.schemas.hotel import HotelCreate
 
 
 # доболения Hotel 
-<<<<<<< HEAD
+
 class HotelService:
 
     def __init__(self, db: AsyncSession):
@@ -18,7 +18,7 @@ class HotelService:
 
     async def create_hotel(self, hotel: HotelCreate):
 
-=======
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -30,7 +30,7 @@ class HotelService:
 
     async def create_hotel(self, hotel: HotelCreate):
 
->>>>>>> 0af0a20 (fix)
+
         result = await self.db.execute(
             select(Hotel).where(
                 Hotel.name == hotel.name,
