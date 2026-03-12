@@ -9,15 +9,45 @@ hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
+<<<<<<< HEAD
 from app.schemas.hotel import HotelCreate, HotelRespons
 from app.services.hotel import HotelService,HorelSearch
 
 import os
 import uuid
+=======
+from app.schemas.hotel import HotelCreate ,HotelRespons
+from app.services.hotel import HotelCreate
+
+
+>>>>>>> 0af0a20 (fix)
 
 hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
+<<<<<<< HEAD
 UPLOAD_DIR = "media"
+=======
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+from app.schemas.hotel import HotelCreate, HotelRespons
+from app.services.hotel import HotelService
+
+hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
+
+from fastapi import APIRouter, Depends, UploadFile, File, Form
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+from app.schemas.hotel import HotelCreate, HotelRespons
+from app.services.hotel import HotelService
+import os
+import uuid
+
+hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
+
+UPLOAD_DIR = "uploads"
+>>>>>>> 0af0a20 (fix)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -51,6 +81,7 @@ async def add_hotel(
 
 
 
+<<<<<<< HEAD
 @hotel_router.get('/{hotel_id}')
 async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
     service = HorelSearch(db)
@@ -60,3 +91,7 @@ async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
     return hotel 
     
     
+=======
+# hotel.get('/{hotel.id} get_by_id')
+# async def 
+>>>>>>> 0af0a20 (fix)
