@@ -9,4 +9,6 @@ class User(BaseModelClass):
     email = Column(String, unique=True, index=True)
     password = Column(String, nullable=False)
 
+    avatar = Column(String, nullable=True)
+
     bookings = relationship("Booking", back_populates="user")

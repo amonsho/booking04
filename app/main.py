@@ -18,6 +18,11 @@ async def init_models():
 
 from app.api.auth_router import router as auth_router
 from app.api.user_router import router as user_router
+from app.api.profile_router import router as profile_router
 
 app.include_router(auth_router)
 app.include_router(user_router)
+app.include_router(profile_router)
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/media", StaticFiles(directory="media"), name="media")
