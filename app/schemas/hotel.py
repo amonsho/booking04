@@ -13,4 +13,3 @@ class HotelCreate(BaseModel):
 class HotelRespons(HotelCreate):
     pass
 
-

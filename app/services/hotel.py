@@ -56,12 +56,5 @@ class  HorelSearch:
             raise HTTPException(status_code=404, detail="Такого hotel нет")
         
         return hotel
-    
-    
-    
-
-
-    
-    
 
     
