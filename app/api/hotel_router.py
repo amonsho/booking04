@@ -1,46 +1,9 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
-from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService
-
-hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
-
-from fastapi import APIRouter, Depends, UploadFile, File, Form
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
-
-from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService,HorelSearch
-
-import os
-import uuid
-
-from app.schemas.hotel import HotelCreate ,HotelRespons
-from app.services.hotel import HotelCreate
-
-
-
-
-hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
-
-
-UPLOAD_DIR = "media"
-
-
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
-from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService
-
-hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
-
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService
+from app.services.hotel import HotelService, HorelSearch
+
 import os
 import uuid
 
