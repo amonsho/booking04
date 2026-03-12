@@ -46,7 +46,7 @@ import uuid
 
 hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "media"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
