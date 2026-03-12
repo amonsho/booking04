@@ -1,14 +1,27 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+from app.schemas.hotel import HotelCreate, HotelRespons
+from app.services.hotel import HotelService
+
+hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
+
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.schemas.hotel import HotelCreate
-from app.services.hotel import create_hotel
-import uuid
+from app.schemas.hotel import HotelCreate, HotelRespons
+from app.services.hotel import HotelService,HorelSearch
+
 import os
+import uuid
 
-hotel = APIRouter(prefix='/hotel', tags=['hotel'])
+hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
-@hotel.post('/hotel')
+UPLOAD_DIR = "media"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@hotel_router.post("/", response_model=HotelRespons)
 async def add_hotel(
     name: str = Form(...),
     city: str = Form(...),
@@ -17,14 +30,10 @@ async def add_hotel(
     photo: UploadFile = File(...),
     db: AsyncSession = Depends(get_db)
 ):
-    
-    
-    os.makedirs("media", exist_ok=True)
 
-    file_extension = photo.filename.split(".")[-1]
-    file_name = f"{uuid.uuid4()}.{file_extension}"
-    file_location = f"media/{file_name}"
-  
+    file_name = f"{uuid.uuid4()}_{photo.filename}"
+    file_location = os.path.join(UPLOAD_DIR, file_name)
+
     with open(file_location, "wb") as buffer:
         buffer.write(await photo.read())
 
@@ -36,18 +45,18 @@ async def add_hotel(
         photo=file_location
     )
 
-    new_hotel = await create_hotel(hotel_data, db)
+    service = HotelService(db)
 
-    hotel_out = {
-        "id": new_hotel.id,
-        "name": new_hotel.name,
-        "city": new_hotel.city,
-        "address": new_hotel.address,
-        "description": new_hotel.description,
-        "photo": new_hotel.photo
-    }
+    return await service.create_hotel(hotel_data)
 
-    return {
-        "message": "Hotel создан",
-        "hotel": hotel_out
-    }
+
+
+@hotel_router.get('/{hotel_id}')
+async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
+    service = HorelSearch(db)
+
+    hotel = await service.search_hotel_by_id(hotel_id)
+
+    return hotel 
+    
+    

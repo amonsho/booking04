@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from app.db.database import engine, Base
 
 from app.models import user, room, booking
-from app.api.hotel_router import hotel as hotel_router
+from app.api.hotel_router import hotel_router
 
 from app.models import user, room, booking, hotel
 
