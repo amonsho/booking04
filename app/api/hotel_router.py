@@ -1,14 +1,3 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
-from app.schemas.hotel import HotelCreate ,HotelRespons
-from app.services.hotel import HotelCreate
-
-
-
-hotel = APIRouter(prefix='/hotel', tags=['hotel'])
-
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
@@ -21,13 +10,14 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService
+from app.services.hotel import HotelService,HorelSearch
+
 import os
 import uuid
 
 hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "media"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -61,5 +51,12 @@ async def add_hotel(
 
 
 
-# hotel.get('/{hotel.id} get_by_id')
-# async def 
+@hotel_router.get('/{hotel_id}')
+async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
+    service = HorelSearch(db)
+
+    hotel = await service.search_hotel_by_id(hotel_id)
+
+    return hotel 
+    
+    
