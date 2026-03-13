@@ -21,11 +21,9 @@ async def get_profile(
     user_id: int = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    repo = UserRepository(db)
 
-    user = result.scalar_one_or_none
+    user = await repo.get_by_id(user_id)
 
     return user
 
@@ -35,11 +33,9 @@ async def upload_avatar(
         user_id: int = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    repo = UserRepository(db)
 
-    user = result.scalar_one_or_none()
+    user = await repo.get_by_id(user_id)
 
     filname = f"user_{user_id}_{file.filename}"
     filepath = os.path.join("media/avatars", filname)
@@ -49,8 +45,7 @@ async def upload_avatar(
     
     user.avatar = filepath
 
-    await db.commit()
-    await db.refresh(user)
+    await repo.update(user)
 
     return {"avatar": filepath}
 
