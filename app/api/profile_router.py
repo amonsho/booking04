@@ -8,6 +8,9 @@ from app.db.session import get_db
 from app.models.user import User
 from app.auth.dependencies import get_current_user
 
+from app.schemas.profile import ProfileUpdate
+from app.repositories.user_repo import UserRepository
+
 router = APIRouter(
     prefix="/profile",
     tags=["Profile"]
@@ -50,3 +53,19 @@ async def upload_avatar(
     await db.refresh(user)
 
     return {"avatar": filepath}
+
+@router.patch("/")
+async def update_profile(
+    data:ProfileUpdate,
+    user_id: int = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    repo = UserRepository(db)
+    user = await repo.get_by_id(user_id)
+
+    if data.name:
+        user.name = data.name
+
+    await repo.update(user)
+
+    return user
