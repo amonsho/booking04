@@ -10,6 +10,7 @@ from app.auth.dependencies import get_current_user
 
 from app.schemas.profile import ProfileUpdate
 from app.repositories.user_repo import UserRepository
+from app.services.user_service import UserService
 
 router = APIRouter(
     prefix="/profile",
@@ -23,9 +24,9 @@ async def get_profile(
 ):
     repo = UserRepository(db)
 
-    user = await repo.get_by_id(user_id)
+    service = UserService(repo)
 
-    return user
+    return await service.get_profile(user_id)
 
 @router.post("/avatar")
 async def upload_avatar(
@@ -35,19 +36,11 @@ async def upload_avatar(
 ):
     repo = UserRepository(db)
 
-    user = await repo.get_by_id(user_id)
+    service = UserService(repo)
 
-    filname = f"user_{user_id}_{file.filename}"
-    filepath = os.path.join("media/avatars", filname)
+    avatar = await service.upload_avatar(user_id, file)
 
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    user.avatar = filepath
-
-    await repo.update(user)
-
-    return {"avatar": filepath}
+    return {"avatar": avatar}
 
 @router.patch("/")
 async def update_profile(
@@ -56,11 +49,7 @@ async def update_profile(
     db: AsyncSession = Depends(get_db)
 ):
     repo = UserRepository(db)
-    user = await repo.get_by_id(user_id)
+    
+    service = UserService(repo)
 
-    if data.name:
-        user.name = data.name
-
-    await repo.update(user)
-
-    return user
+    return await service.update_profile(user_id, data)
