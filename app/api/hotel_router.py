@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.schemas.hotel import HotelCreate, HotelRespons
-from app.services.hotel import HotelService, HorelSearch
-
+from app.schemas.hotel import HotelCreate, HotelRespons , HotelUpdate
+from app.services.hotel import HotelService
 import os
 import uuid
 
@@ -44,17 +43,42 @@ async def add_hotel(
 
 
 
-
 @hotel_router.get('/{hotel_id}')
 async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
-    service = HorelSearch(db)
+    service = HotelService(db)
 
     hotel = await service.search_hotel_by_id(hotel_id)
 
     return hotel 
-    
-    
 
-# hotel.get('/{hotel.id} get_by_id')
-# async def 
 
+
+
+@hotel_router.patch("/{hotel_id}", response_model=HotelRespons)
+async def update_hotel(
+    hotel_id: int,
+    name: str | None = Form(None),
+    city: str | None = Form(None),
+    address: str | None = Form(None),
+    description: str | None = Form(None),
+    photo: UploadFile | None = File(None),
+    service: HotelService = Depends(HotelService.get_hotel_service)
+):
+
+    photo_path = None
+    if photo:
+        file_name = f"{uuid.uuid4()}_{photo.filename}"
+        file_location = os.path.join(UPLOAD_DIR, file_name)
+        with open(file_location, "wb") as buffer:
+            buffer.write(await photo.read())
+        photo_path = file_location
+
+    hotel_data = HotelUpdate(
+        name=name,
+        city=city,
+        address=address,
+        description=description,
+        photo=photo_path
+    )
+
+    return await service.update_hotel(hotel_id, hotel_data)
