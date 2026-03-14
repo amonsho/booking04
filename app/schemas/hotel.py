@@ -13,3 +13,5 @@ class HotelCreate(BaseModel):
 class HotelRespons(HotelCreate):
     pass
 
+class HotelUpdate(HotelCreate):
+    pass

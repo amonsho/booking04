@@ -1,9 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status ,Depends
 
 from app.models.hotel import Hotel
-from app.schemas.hotel import HotelCreate
+from app.schemas.hotel import HotelCreate,HotelUpdate
+from app.db.session import get_db
 
 
 class HotelService:
@@ -33,12 +34,7 @@ class HotelService:
         await self.db.refresh(new_hotel)
 
         return new_hotel
-
-
-class HorelSearch:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-
+    
     async def search_hotel_by_id(self, hotel_id: int):
         result = await self.db.execute(
             select(Hotel).where(Hotel.id == hotel_id)
@@ -49,3 +45,43 @@ class HorelSearch:
             raise HTTPException(status_code=404, detail="Такого hotel нет")
 
         return hotel
+    
+    async def update_hotel(self, hotel_id:int , hotel_data:HotelUpdate):
+        result = await self.db.execute(
+            select(Hotel).where(
+                Hotel.id == hotel_id 
+            )
+        )
+        
+        hotel = result.scalar_one_or_none()
+        
+        if not hotel : 
+            raise HTTPException(status_code=404,detail="Такова hotel нет !!!")
+        
+        for field , value in hotel_data.model_dump(exclude_unset=True).items():
+            setattr(hotel,field,value)
+            
+        try: 
+            await self.db.commit()
+            await self.db.refresh(hotel)
+        except Exception:
+            await self.db.rollback()
+            raise
+        
+        return hotel
+    
+
+    def get_hotel_service(db: AsyncSession = Depends(get_db)):
+        return HotelService(db)
+
+
+
+
+
+
+        
+    
+        
+        
+        
+        
