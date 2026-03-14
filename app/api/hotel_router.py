@@ -5,6 +5,7 @@ from app.schemas.hotel import HotelCreate, HotelResponse,HotelUpdate
 from app.services.hotel import HotelService
 import os
 import uuid
+import aiofiles
 
 hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
@@ -26,7 +27,7 @@ async def add_hotel(
     file_name = f"{uuid.uuid4()}_{photo.filename}"
     file_location = os.path.join(UPLOAD_DIR, file_name)
 
-    with open(file_location, "wb") as buffer:
+    async with aiofiles.open(file_location, 'wb')  as buffer:
         buffer.write(await photo.read())
 
     hotel_data = HotelCreate(
@@ -49,7 +50,7 @@ async def get_all_hotels(db: AsyncSession = Depends(get_db)):
     return hotels
 
 
-@hotel_router.get('/{hotel_id}')
+@hotel_router.get('/{hotel_id}',response_model=HotelResponse)
 async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
     service = HotelService(db)
 

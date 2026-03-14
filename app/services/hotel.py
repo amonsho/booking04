@@ -82,19 +82,19 @@ class HotelService:
 
     async def delete_hotel(self , hotel_id:int):
         result = await self.db.execute(
-            select(Hotel).filter(
+            select(Hotel).where(
                 Hotel.id == hotel_id
             )
         )
         
         hotel = result.scalar_one_or_none()
         
-        if not result : 
+        if not hotel : 
             raise HTTPException(status_code=404,detail="Такова hotel нет !!!")
          
-        await db.delete(hotel)
-        await db.commit()     
-        return True    
+        await self.db.delete(hotel)
+        await self.db.commit()     
+        return {'deleted": True'}    
         
 
 
