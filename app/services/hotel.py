@@ -35,6 +35,12 @@ class HotelService:
 
         return new_hotel
     
+    
+    async def get_all_hotel(self):
+        result = await self.db.execute(select(Hotel))
+        hotels = result.scalars().all()
+        return hotels
+    
     async def search_hotel_by_id(self, hotel_id: int):
         result = await self.db.execute(
             select(Hotel).where(Hotel.id == hotel_id)
@@ -45,7 +51,6 @@ class HotelService:
             raise HTTPException(status_code=404, detail="Такого hotel нет")
 
         return hotel
-    
     async def update_hotel(self, hotel_id:int , hotel_data:HotelUpdate):
         result = await self.db.execute(
             select(Hotel).where(
@@ -74,6 +79,23 @@ class HotelService:
     def get_hotel_service(db: AsyncSession = Depends(get_db)):
         return HotelService(db)
 
+
+    async def delete_hotel(self , hotel_id:int):
+        result = await self.db.execute(
+            select(Hotel).filter(
+                Hotel.id == hotel_id
+            )
+        )
+        
+        hotel = result.scalar_one_or_none()
+        
+        if not result : 
+            raise HTTPException(status_code=404,detail="Такова hotel нет !!!")
+         
+        await db.delete(hotel)
+        await db.commit()     
+        return True    
+        
 
 
 
