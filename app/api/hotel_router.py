@@ -74,31 +74,43 @@ async def update_hotel(
     admin = Depends(get_admin_user)
 ):
 
-    photo_path = None
+    update_data = {}
+
+    if name is not None:
+        update_data["name"] = name
+    if city is not None:
+        update_data["city"] = city
+    if address is not None:
+        update_data["address"] = address
+    if description is not None:
+        update_data["description"] = description
+
+
+
     if photo:
         file_name = f"{uuid.uuid4()}_{photo.filename}"
-        file_location = os.path.join(UPLOAD_DIR, file_name)
-        with open(file_location, "wb") as buffer:
-            buffer.write(await photo.read())
-        photo_path = file_location
+        file_path = os.path.join(UPLOAD_DIR, file_name)
 
-    hotel_data = HotelUpdate(
-        name=name,
-        city=city,
-        address=address,
-        description=description,
-        photo=photo_path
-    )
+        with open(file_path, "wb") as buffer:
+            buffer.write(await photo.read())
+
+        update_data["photo"] = file_name 
+
+    hotel_data = HotelUpdate(**update_data)
 
     return await service.update_hotel(hotel_id, hotel_data)
 
 
-@hotel_router.delete('/{hotel_id}')
-async def delete_hotel(hotel_id:int , db : AsyncSession = Depends(get_db), admin = Depends(get_admin_user)):
-    
+@hotel_router.delete("/{hotel_id}")
+async def delete_hotel(
+    hotel_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
     service = HotelService(db)
-    hotel = service.delete_hotel(hotel_id)
-    
-    return {f'{hotel} удален'}
+
+    await service.delete_hotel(hotel_id)
+
+    return {"message": "Hotel deleted successfully"}
 
 

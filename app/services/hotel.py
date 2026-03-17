@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status ,Depends
-
+import os
 from app.models.hotel import Hotel
 from app.schemas.hotel import HotelCreate,HotelUpdate
 from app.db.session import get_db
 
+UPLOAD_DIR = "media/hotel"
 
 class HotelService:
     def __init__(self, db: AsyncSession):
@@ -80,22 +81,25 @@ class HotelService:
         return HotelService(db)
 
 
-    async def delete_hotel(self , hotel_id:int):
+    async def delete_hotel(self, hotel_id: int):
         result = await self.db.execute(
-            select(Hotel).where(
-                Hotel.id == hotel_id
-            )
-        )
-        
+            select(Hotel).where(Hotel.id == hotel_id)
+     )
         hotel = result.scalar_one_or_none()
-        
-        if not hotel : 
-            raise HTTPException(status_code=404,detail="Такова hotel нет !!!")
-         
+
+        if not hotel:
+            raise HTTPException(status_code=404, detail="Такого hotel нет!")
+
+
+        if hotel.photo:
+            file_path = os.path.join(UPLOAD_DIR, hotel.photo)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
         await self.db.delete(hotel)
-        await self.db.commit()     
-        return {'deleted": True'}    
-        
+        await self.db.commit()
+
+        return {"deleted": True}
 
 
 
