@@ -7,6 +7,8 @@ import os
 import uuid
 import aiofiles
 
+from app.auth.dependencies import get_current_user, get_admin_user
+
 hotel_router = APIRouter(prefix="/hotel", tags=["Hotel"])
 
 UPLOAD_DIR = "media"
@@ -21,7 +23,8 @@ async def add_hotel(
     address: str = Form(...),
     description: str = Form(None),
     photo: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
 ):
 
     file_name = f"{uuid.uuid4()}_{photo.filename}"
@@ -44,14 +47,14 @@ async def add_hotel(
 
 
 @hotel_router.get("/get_all", response_model=list[HotelResponse])
-async def get_all_hotels(db: AsyncSession = Depends(get_db)):
+async def get_all_hotels(db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):
     service = HotelService(db)
     hotels = await service.get_all_hotel()
     return hotels
 
 
 @hotel_router.get('/{hotel_id}',response_model=HotelResponse)
-async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db)):
+async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db), user = Depends(get_current_user)):
     service = HotelService(db)
 
     hotel = await service.search_hotel_by_id(hotel_id)
@@ -67,7 +70,8 @@ async def update_hotel(
     address: str | None = Form(None),
     description: str | None = Form(None),
     photo: UploadFile | None = File(None),
-    service: HotelService = Depends(HotelService.get_hotel_service)
+    service: HotelService = Depends(HotelService.get_hotel_service),
+    admin = Depends(get_admin_user)
 ):
 
     photo_path = None
@@ -90,7 +94,7 @@ async def update_hotel(
 
 
 @hotel_router.delete('/{hotel_id}')
-async def delete_hotel(hotel_id:int , db : AsyncSession = Depends(get_db)):
+async def delete_hotel(hotel_id:int , db : AsyncSession = Depends(get_db), admin = Depends(get_admin_user)):
     
     service = HotelService(db)
     hotel = service.delete_hotel(hotel_id)
