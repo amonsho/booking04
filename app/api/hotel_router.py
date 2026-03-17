@@ -13,7 +13,7 @@ UPLOAD_DIR = "media"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
+#----------------------------------------------------
 @hotel_router.post("/", response_model=HotelResponse)
 async def add_hotel(
     name: str = Form(...),
