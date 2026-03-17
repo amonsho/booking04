@@ -9,6 +9,7 @@ class Room(BaseModelClass):
     room_type = Column(String)
     price = Column(Float)
     wifi = Column(Boolean)
+    photo = Column(String)
     
     
     bookings = relationship("Booking", back_populates="room")
