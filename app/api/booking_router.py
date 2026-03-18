@@ -19,5 +19,5 @@ async def create_booking(
 
     return await service.create_booking(
         booking,
-        current_user  
+        current_user.id
     )
