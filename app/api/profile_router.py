@@ -19,37 +19,37 @@ router = APIRouter(
 
 @router.get("/")
 async def get_profile(
-    user_id: int = Depends(get_current_user),
+    user: int = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     repo = UserRepository(db)
 
     service = UserService(repo)
 
-    return await service.get_profile(user_id)
+    return await service.get_profile(user.id)
 
 @router.post("/avatar")
 async def upload_avatar(
         file: UploadFile = File(...),
-        user_id: int = Depends(get_current_user),
+        user: int = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     repo = UserRepository(db)
 
     service = UserService(repo)
 
-    avatar = await service.upload_avatar(user_id, file)
+    avatar = await service.upload_avatar(user.id, file)
 
     return {"avatar": avatar}
 
 @router.patch("/")
 async def update_profile(
     data:ProfileUpdate,
-    user_id: int = Depends(get_current_user),
+    user: int = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     repo = UserRepository(db)
     
     service = UserService(repo)
 
-    return await service.update_profile(user_id, data)
+    return await service.update_profile(user.id, data)
