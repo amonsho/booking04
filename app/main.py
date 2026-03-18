@@ -35,8 +35,10 @@ app.include_router(user_router)
 # -0-0-0-0--9--0-0-0-API ROMA -0-0-0-0-0-0
 from app.api.hotel_router import hotel_router
 from app.api.room_router import room_router
+from app.api.booking_router import booking_router as b_r
 app.include_router(hotel_router)
 app.include_router(room_router)
+app.include_router(b_r)
 
 
 
