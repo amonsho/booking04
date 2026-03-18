@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, model_validator
 from datetime import date
 from typing import Optional
 
@@ -8,11 +8,11 @@ class BookingCreate(BaseModel):
     date_to: date
     guests: int = 1
 
-    @field_validator("date_to")
-    def check_dates(cls, v, values):
-        if "date_from" in values and v <= values["date_from"]:
+    @model_validator(mode="after")
+    def check_dates(self):
+        if self.date_to <= self.date_from:
             raise ValueError("date_to must be greater than date_from")
-        return v
+        return self
 
 
 class BookingUpdate(BaseModel):
