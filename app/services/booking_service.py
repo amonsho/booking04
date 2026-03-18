@@ -5,6 +5,8 @@ from app.db.session import get_db
 from app.auth.dependencies import get_current_user
 from app.models.booking import Booking 
 
+#  к пш вип
+
 class BookingService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -15,3 +17,4 @@ class BookingService:
         await self.db.commit()
         await self.db.refresh(new_booking)
         return new_booking
+    
