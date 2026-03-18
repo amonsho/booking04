@@ -12,11 +12,7 @@ from app.repositories.user_repo import UserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-<<<<<<< HEAD
-async def  get_current_user(token:str = Depends(oauth2_scheme)):
-=======
 async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
->>>>>>> 14ecb5eb528079792279555e804d7ba993d1532f
     try:
         payload = jwt.decode(
             token,
