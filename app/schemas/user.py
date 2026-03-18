@@ -34,3 +34,28 @@ class UserRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ChangePasswordSchema(BaseModel):
+    old_password:str
+    new_password:str
+    new_password2:str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 6:
+            raise ValueError("Пароль должен состоять как минимум из 6 символов.")
+        
+        if not re.search(r"[A-za-z]", value):
+            raise ValueError("Пароль должен содержать букву.")
+        
+        if not re.search(r"\d", value):
+            raise ValueError("Пароль должен содержать цифру.")
+        
+        return value
+    
+    @model_validator(mode="after")
+    def check_passwords_match(self):
+        if self.new_password != self.new_password2:
+            raise ValueError("Пароли не совпадают")
+        return self
