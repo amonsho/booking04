@@ -7,7 +7,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserRead
 from app.schemas.auth import LoginSchema, TokenSchema
 from app.auth.auth import hash_password, verify_password
-from app.auth.jwt import create_access_token
+from app.auth.jwt import create_access_token, create_refresh_token
 from app.auth.dependencies import get_current_user
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -55,7 +55,10 @@ async def login(
         )
 
     
-    token = create_access_token({"sub": str(db_user.id)})
+    access_token = create_access_token({"sub": str(db_user.id)})
+    refresh_token = create_refresh_token({"sub":str(db_user.id)})
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": access_token,
+            "refresh_token": refresh_token, 
+            "token_type": "bearer"}
 
