@@ -15,6 +15,7 @@ class BookingCreate(BaseModel):
         return self
 
 
+
 class BookingUpdate(BaseModel):
     date_from: Optional[date] = None
     date_to: Optional[date] = None
@@ -33,6 +34,4 @@ class BookingResponse(BaseModel):
     status: str
     total_price: int | None
     guests: int
-
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

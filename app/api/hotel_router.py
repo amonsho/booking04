@@ -31,7 +31,8 @@ async def add_hotel(
     file_location = os.path.join(UPLOAD_DIR, file_name)
 
     async with aiofiles.open(file_location, 'wb')  as buffer:
-        buffer.write(await photo.read())
+        # Must await the write, otherwise file may be created as 0 bytes.
+        await buffer.write(await photo.read())
 
     hotel_data = HotelCreate(
         name=name,

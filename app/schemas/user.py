@@ -1,5 +1,6 @@
 from pydantic import EmailStr, BaseModel, field_validator,model_validator
 import re
+from app.models.enums import UserRole
 
 class UserCreate(BaseModel):
     name: str
@@ -31,6 +32,8 @@ class UserRead(BaseModel):
     id:int
     name:str
     email:EmailStr
+    role: UserRole
+    avatar: str | None = None
 
     class Config:
         orm_mode = True

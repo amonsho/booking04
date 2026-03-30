@@ -1,5 +1,6 @@
 import asyncio
 from fastapi import FastAPI
+from sqlalchemy import text
 from app.db.database import engine, Base
 from app.models import user, room, booking
 from app.api.hotel_router import hotel_router
@@ -13,6 +14,19 @@ app.include_router(hotel_router)
 async def init_models():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Compatibility for existing SQLite DBs (no migrations yet).
+        # If the table was created before adding columns in the model,
+        # `create_all()` won't modify the schema and inserts will fail.
+        if "sqlite" in str(engine.url):
+            res = await conn.execute(text("PRAGMA table_info(bookings);"))
+            rows = res.fetchall()
+            existing_cols = {r[1] for r in rows}  # PRAGMA: (cid, name, type, ...)
+            if "is_available" not in existing_cols:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE bookings ADD COLUMN is_available BOOLEAN DEFAULT 0;"
+                    )
+                )
 
 # -0-0-0-0--9--0-0-0-API AMONSHO -0-0-0-0-0-0
 
@@ -24,6 +38,7 @@ from app.api.admin_router import router as admin_router
 
 from fastapi.staticfiles import StaticFiles
 app.mount("/media", StaticFiles(directory="media"), name="media")
+app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
 
 app.include_router(auth_router)
 app.include_router(user_router)

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Bookings - Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body data-page="profile" class="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-indigo-50">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 w-[360px] max-w-[90vw] flex flex-col gap-2"></div>
+
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/70 backdrop-blur">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white grid place-items-center font-extrabold">B</div>
+          <div>
+            <div class="text-sm font-bold text-slate-900">Hotel Booking</div>
+            <div class="text-xs text-slate-600">Your reservations</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-2">
+          <a href="/ui/index.html" class="rounded-xl px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 transition">
+            Home
+          </a>
+          <button id="logout-btn" class="rounded-xl px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 transition">
+            Log out
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-10">
+      <div class="rounded-3xl border border-slate-200 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-200">
+          <h1 class="text-2xl font-extrabold text-slate-900">My bookings</h1>
+          <p class="mt-2 text-sm text-slate-600">Status, dates and total price.</p>
+        </div>
+
+        <div class="p-4 md:p-6">
+          <div id="bookings-hint" class="hidden rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-600">
+            No bookings yet.
+            <a href="/ui/index.html" class="font-bold text-slate-900 hover:underline">Browse rooms</a>
+            and create your first reservation.
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left">
+              <thead>
+                <tr class="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                  <th class="px-4 py-3">ID</th>
+                  <th class="px-4 py-3">Hotel</th>
+                  <th class="px-4 py-3">Room</th>
+                  <th class="px-4 py-3">Dates</th>
+                  <th class="px-4 py-3">Guests</th>
+                  <th class="px-4 py-3">Total</th>
+                  <th class="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="bookings-body" class="text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/ui/app.js" defer></script>
+  </body>
+</html>
+
