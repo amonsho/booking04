@@ -13,3 +13,4 @@ class Hotel (BaseModelClass):
     description = Column(String)
     
     rooms = relationship("Room", back_populates='hotel')
+    reviews = relationship("Review", back_populates='hotel')
