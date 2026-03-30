@@ -6,6 +6,7 @@ from app.services.room_service import RoomService
 import uuid
 import os
 import aiofiles
+from app.auth.dependencies import get_admin_user
 
 room_router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -19,7 +20,8 @@ async def create_room(
     price: float = Form(description="Цена должна быть больше 0"),
     wifi: bool = Form(...),
     photo: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user),
 ):
     file_name = f"{uuid.uuid4()}_{photo.filename}"
     file_path = f"{UPLOAD_DIR}/{file_name}"
@@ -64,7 +66,8 @@ async def update_room(
     wifi: bool = Form(None),
     hotel_id: int = Form(None),
     photo: UploadFile = File(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user),
 ):
     service = RoomService(db)
 
@@ -100,7 +103,8 @@ async def update_room(
 @room_router.delete("/{room_id}")
 async def delete_room(
     room_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user),
 ):
     service = RoomService(db)
     return await service.delete_room(room_id)

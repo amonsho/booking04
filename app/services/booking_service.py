@@ -12,26 +12,42 @@ class BookingService:
 
     async def create_booking(self, booking_data, user_id):
 
-        # 1. дни
         days = (booking_data.date_to - booking_data.date_from).days
         if days <= 0:
             raise HTTPException(400, "Invalid dates")
 
-        # 2. получить room
         room = await self.repo.get_room_by_id(booking_data.room_id)
         if not room:
             raise HTTPException(404, "Room not found")
 
-        # 3. цена
         total_price = days * room.price
 
-        # 4. создать объект
         new_booking = Booking(
             **booking_data.model_dump(),
             user_id=user_id,
             total_price=total_price
         )
-
-        # 5. сохранить
+        
         return await self.repo.create_booking(new_booking)
+
+    async def get_user_bookings(self, user_id: int):
+        return await self.repo.get_bookings_by_user(user_id)
+    
+
+    async def delete_room(self, room_id: int):
+        raise HTTPException(status_code=400, detail="Deleting rooms is not supported by BookingService")
+
+    async def delete_booking(self, booking_id: int):
+        booking = await self.repo.get_by_id(booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        ok = await self.repo.delete_booking_by_id(booking_id)
+        if not ok:
+            raise HTTPException(status_code=500, detail="Failed to delete booking")
+
+        return {"message": "Booking deleted successfully", "id": booking_id}
+    
+    
+    
     

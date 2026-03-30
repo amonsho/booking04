@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body data-page="register" class="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 w-[360px] max-w-[90vw] flex flex-col gap-2"></div>
+
+    <main class="min-h-screen flex items-center justify-center px-4">
+      <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white/80 backdrop-blur shadow-xl overflow-hidden">
+        <div class="p-7 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white grid place-items-center font-extrabold">B</div>
+            <div>
+              <div class="text-sm font-bold text-slate-900">Hotel Booking</div>
+              <div class="text-xs text-slate-600">Create account</div>
+            </div>
+          </div>
+          <h1 class="mt-5 text-2xl font-extrabold text-slate-900">Register</h1>
+          <p class="mt-2 text-sm text-slate-600">Enter your details.</p>
+        </div>
+
+        <div class="p-7">
+          <form id="register-form" class="space-y-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="register-name">Name</label>
+              <input id="register-name" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Your name" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="register-email">Email</label>
+              <input id="register-email" type="email" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="you@example.com" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="register-password">Password</label>
+              <input id="register-password" type="password" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="At least 6 chars" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="register-password2">Repeat password</label>
+              <input id="register-password2" type="password" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Repeat password" />
+            </div>
+
+            <div id="register-error" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+            <div id="register-success" class="hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"></div>
+
+            <button id="register-submit" type="submit" class="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-slate-800 transition">
+              Create account
+            </button>
+          </form>
+
+          <div class="mt-6">
+            <div class="flex items-center gap-3">
+              <div class="h-px flex-1 bg-slate-200"></div>
+              <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">or</div>
+              <div class="h-px flex-1 bg-slate-200"></div>
+            </div>
+
+            <div class="mt-4 text-sm font-semibold text-slate-800 mb-2">Continue with Google</div>
+            <div
+              id="google-btn"
+              data-google-client-id="YOUR_GOOGLE_CLIENT_ID"
+            ></div>
+            <p class="mt-2 text-xs text-slate-500">
+              Replace `YOUR_GOOGLE_CLIENT_ID` with your Google OAuth Client ID.
+            </p>
+          </div>
+
+          <div class="mt-5 text-sm text-slate-600">
+            Already have an account?
+            <a href="/ui/login.html" class="font-bold text-slate-900 hover:underline">Log in</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/ui/app.js" defer></script>
+  </body>
+</html>
+
