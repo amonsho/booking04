@@ -14,3 +14,4 @@ class User(BaseModelClass):
     avatar = Column(String, nullable=True)
 
     bookings = relationship("Booking", back_populates="user")
+    reviews = relationship("Review", back_populates="user")
