@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body data-page="login" class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-sky-50">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 w-[360px] max-w-[90vw] flex flex-col gap-2"></div>
+
+    <main class="min-h-screen flex items-center justify-center px-4">
+      <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white/80 backdrop-blur shadow-xl overflow-hidden">
+        <div class="p-7 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white grid place-items-center font-extrabold">B</div>
+            <div>
+              <div class="text-sm font-bold text-slate-900">Hotel Booking</div>
+              <div class="text-xs text-slate-600">Sign in to book</div>
+            </div>
+          </div>
+          <h1 class="mt-5 text-2xl font-extrabold text-slate-900">Login</h1>
+          <p class="mt-2 text-sm text-slate-600">Use your email and password.</p>
+        </div>
+
+        <div class="p-7">
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="login-email">Email</label>
+              <input id="login-email" type="email" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="you@example.com" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-800" for="login-password">Password</label>
+              <input id="login-password" type="password" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="••••••••" />
+            </div>
+
+            <div id="login-error" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+            <button id="login-submit" type="submit" class="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-slate-800 transition">
+              Sign in
+            </button>
+          </form>
+
+          <div class="mt-5 text-sm text-slate-600">
+            No account?
+            <a href="/ui/register.html" class="font-bold text-slate-900 hover:underline">Create one</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/ui/app.js" defer></script>
+  </body>
+</html>
+
