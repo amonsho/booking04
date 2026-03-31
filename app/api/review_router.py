@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
 
 from app.db.session import get_db
 from app.schemas.review import ReviewCreate, ReviewResponse
@@ -26,3 +27,27 @@ async def create_review(
         comment=data.comment
     )
     return review
+
+@router.get("/hotel/{hotel_id}")
+async def get_hotel_reviews(
+    hotel_id:int,
+    db: AsyncSession = Depends(get_db)
+):
+    repo = ReviewRepository(db)
+    service = ReviewService(repo)
+
+    return await service.get_hotel_reviews(hotel_id)
+
+@router.delete("/{review_id}")
+async def delete_review(
+    review_id:int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    repo = ReviewRepository(db)
+    service = ReviewService(repo)
+
+    return await service.delete_review(
+        review_id = review_id,
+        user_id = current_user.id
+    )
