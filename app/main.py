@@ -36,14 +36,20 @@ from app.api.admin_router import router as admin_router
 from app.api.review_router import router as review_router
 from app.auth.google import router as google_router
 
-
 from fastapi.staticfiles import StaticFiles
 app.mount("/media", StaticFiles(directory="media"), name="media")
 app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
 
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
-app.add_middleware(SessionMiddleware, secret_key = settings.SESSION_SECRET_KEY)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SESSION_SECRET_KEY,
+    session_cookie="session",
+    same_site="lax",
+    https_only=False,
+)
 
 app.include_router(auth_router)
 app.include_router(user_router)
