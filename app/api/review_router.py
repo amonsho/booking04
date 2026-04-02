@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -31,12 +31,20 @@ async def create_review(
 @router.get("/hotel/{hotel_id}")
 async def get_hotel_reviews(
     hotel_id:int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0)
 ):
     repo = ReviewRepository(db)
     service = ReviewService(repo)
 
-    return await service.get_hotel_reviews(hotel_id)
+    data = await service.get_hotel_reviews(hotel_id=hotel_id, limit=limit, offset=offset)
+
+    return {
+        "reviews": [ReviewResponse.model_validate(r) for r in data["reviews"]],
+        "average_rating": data["average_rating"]
+    }
+
 
 @router.delete("/{review_id}")
 async def delete_review(

@@ -22,7 +22,7 @@ class ReviewRepository:
         )
         return result.scalars().first()
     
-    async def get_hotel_reviews(self, hotel_id:int):
+    async def get_hotel_reviews(self, hotel_id:int, limit:int, offset:int):
         result = await self.session.execute(
             select(Review).where(Review.hotel_id == hotel_id)
         )
