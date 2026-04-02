@@ -8,10 +8,17 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
+    SESSION_SECRET_KEY: str
+
     # Google Identity Services client id (Frontend uses this value; no secret here)
     GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_REDIRECT_URI: Optional[str] = None
+    # Frontend URL to redirect to after successful OAuth (include protocol)
+    FRONTEND_URL: Optional[str] = None
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

@@ -32,6 +32,7 @@ class UserService:
         filename = f"user_{user_id}_{file.filename}"
         filepath = os.path.join("media/avatars", filename)
 
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 

@@ -33,8 +33,8 @@ class ReviewService:
 
         return await self.repo.create(review)
     
-    async def get_hotel_reviews(self, hotel_id:int):
-        reviews = await self.repo.get_hotel_reviews(hotel_id)
+    async def get_hotel_reviews(self, hotel_id:int, limit:int, offset:int):
+        reviews = await self.repo.get_hotel_reviews(hotel_id, limit, offset)
         avg_rating = await self.repo.get_average_rating(hotel_id)
 
         return {
