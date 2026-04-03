@@ -70,3 +70,58 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
             "avatar": result["user"].avatar,
         },
     }
+
+@router.get('/link')
+async def google_link(request:Request):
+    redirect_uri = "http://localhost:8000/auth/google/link/callback"
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+from app.auth.dependencies import get_current_user
+
+@router.get("/link/callback")
+async def google_link_callback(
+    request:Request,
+    db:AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    # защита от второго запроса
+    if not request.session:
+        return {"detail":"Dublicate callback ignored"}
+    
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Google auth error")
+    
+    # получаем user info
+    user_info = None
+
+    if token.get("id_token"):
+        try:
+            user_info = await oauth.google.parse_id_token(request, token)
+        except Exception:
+            user_info = None
+    
+    # fallback на userinfo endpoint
+    if not user_info:
+        resp = await oauth.google.get(
+            "https://openidconnect.googleapis.com/v1/userinfo",
+            token=token
+        )
+        if resp.status_code != 200:
+            raise HTTPException(401, "Failed to fetch userinfo from Google")
+        user_info = resp.json()
+
+    google_id = user_info.get("sub")
+    if not google_id:
+        raise HTTPException(status_code=400, detail="No google_id")
+
+    repo = UserRepository(db)
+    service = GoogleService(repo)
+    try:
+        await service.link_google(current_user, google_id)
+        print(f"[DEBUG] User {current_user.email} linked to Google ID {google_id}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"message":"Google account linked successfully"}

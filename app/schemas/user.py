@@ -34,6 +34,7 @@ class UserRead(BaseModel):
     email:EmailStr
     role: UserRole
     avatar: str | None = None
+    google_id: str | None = None
 
     class Config:
         orm_mode = True
