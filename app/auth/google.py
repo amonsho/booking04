@@ -33,7 +33,7 @@ async def google_register(request: Request):
 @router.get("/callback")
 async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
 
-    # 🔥 защита от второго запроса
+    # защита от второго запроса
     if not request.session:
         return {"detail": "Duplicate callback ignored"}
 
@@ -44,7 +44,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=401, detail="Token error")
 
-    # 🔹 user info
+    # user info
     try:
         user_info = await oauth.google.parse_id_token(request, token)
     except Exception:
@@ -53,7 +53,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
         )
         user_info = resp.json()
 
-    # 🔹 service layer
+    # service layer
     repo = UserRepository(db)
     service = GoogleService(repo)
 

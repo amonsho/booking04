@@ -11,17 +11,30 @@ class GoogleService:
         self.repo = repo
 
     async def login_or_register(self, user_info: dict):
+        google_id = user_info.get("sub")
         email = user_info.get("email")
         name = user_info.get("name") or (email.split("@")[0] if email else None)
         avatar = user_info.get("picture")
 
-        if not email or not name:
-            raise Exception("Invalid Google data")
+        if not google_id:
+            raise Exception("No google_id")
 
-        user = await self.repo.get_by_email(email)
+        user = await self.repo.get_by_google_id(google_id)
+
+        if not user:
+            user = await self.repo.get_by_email(email)
+
+        # if not email or not name:
+        #     raise Exception("Invalid Google data")
+
+        # user = await self.repo.get_by_email(email)
 
         if user:
             # обновляем
+            # если есть user но нет google_id  привязываем
+            if not user.google_id:
+                user.google_id = google_id
+
             if avatar and user.avatar != avatar:
                 user.avatar = avatar
             if name and user.name != name:
@@ -38,6 +51,7 @@ class GoogleService:
                 email=email,
                 password=hash_password(random_password),
                 avatar=avatar,
+                google_id=google_id
             )
 
             user = await self.repo.create(user)
