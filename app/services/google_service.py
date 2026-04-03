@@ -65,3 +65,17 @@ class GoogleService:
             "refresh_token": refresh_token,
             "user": user,
         }
+    
+    async def link_google(self, user, google_id:str):
+        existing = await self.repo.get_by_google_id(google_id)
+
+        if existing:
+            raise Exception("Google already used")
+        
+        if user.google_id:
+            raise Exception("Already linked")
+        
+        user.google_id = google_id
+        user = await self.repo.update(user)
+
+        return user
