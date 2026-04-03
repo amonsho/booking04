@@ -10,6 +10,7 @@ class User(BaseModelClass):
     email = Column(String, unique=True, index=True)
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.USER)
+    google_id = Column(String, unique=True, nullable=True)
 
     avatar = Column(String, nullable=True)
 
