@@ -6,6 +6,9 @@ from app.services.hotel import HotelService
 import os
 import uuid
 import aiofiles
+from app.models.hotel import Hotel
+from app.models.room import Room
+from sqlalchemy import func,select
 
 from app.auth.dependencies import get_current_user, get_admin_user
 
@@ -115,3 +118,9 @@ async def delete_hotel(
     return {"message": "Hotel deleted successfully"}
 
 
+
+@hotel_router.get("/reports/hotels_count")
+async def hotels_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(func.count(Hotel.id)))
+    count = result.scalar()
+    return {"hotels_count": count}
