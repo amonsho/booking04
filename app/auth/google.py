@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
+from pydantic import BaseModel
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from authlib.integrations.starlette_client import OAuth
 from authlib.integrations.base_client.errors import MismatchingStateError
 
@@ -22,6 +25,35 @@ oauth.register(
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile", "prompt":"select_account"},
 )
+
+class GoogleToken(BaseModel):
+    id_token: str
+
+@router.post("/register")
+async def google_register_post(data: GoogleToken, db: AsyncSession = Depends(get_db)):
+    try:
+        user_info = id_token.verify_oauth2_token(
+            data.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+        )
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    repo = UserRepository(db)
+    service = GoogleService(repo)
+
+    result = await service.login_or_register(user_info)
+
+    return {
+        "access_token": result["access_token"],
+        "refresh_token": result["refresh_token"],
+        "token_type": "bearer",
+        "user": {
+            "id": result["user"].id,
+            "email": result["user"].email,
+            "name": result["user"].name,
+            "avatar": result["user"].avatar,
+        },
+    }
 
 
 @router.get("/register")
