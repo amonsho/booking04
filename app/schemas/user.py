@@ -36,8 +36,7 @@ class UserRead(BaseModel):
     avatar: str | None = None
     google_id: str | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 class ChangePasswordSchema(BaseModel):
     old_password:str
