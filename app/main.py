@@ -51,6 +51,16 @@ app.add_middleware(
     https_only=False,
 )
 
+# Allow frontend (localhost) to access API during development
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.FRONTEND_URL or "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(profile_router)

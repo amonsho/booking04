@@ -13,8 +13,7 @@ from app.repositories.user_repo import UserRepository
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
-async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
-
+async def get_user_by_token(token: str, db: AsyncSession):
     try:
         payload = jwt.decode(
             token,
@@ -42,6 +41,10 @@ async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid token"
         )
+
+
+async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    return await get_user_by_token(token, db)
     
 async def get_admin_user(token: str=Depends(oauth2_scheme), db: AsyncSession=Depends(get_db)):
     payload = jwt.decode(

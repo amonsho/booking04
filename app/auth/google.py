@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -12,6 +13,7 @@ from app.core.config import settings
 
 from app.repositories.user_repo import UserRepository
 from app.services.google_service import GoogleService
+from app.auth.dependencies import get_current_user, get_user_by_token
 
 
 router = APIRouter(prefix="/auth/google", tags=["Google OAuth"])
@@ -104,7 +106,12 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     }
 
 @router.get('/link')
-async def google_link(request:Request):
+async def google_link(request: Request, token: str, db: AsyncSession = Depends(get_db)):
+    # Authenticate manually via token in query param
+    current_user = await get_user_by_token(token, db)
+    # Store user id in session for the callback
+    request.session["link_user_id"] = current_user.id
+    
     redirect_uri = "http://localhost:8000/auth/google/link/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -112,36 +119,35 @@ from app.auth.dependencies import get_current_user
 
 @router.get("/link/callback")
 async def google_link_callback(
-    request:Request,
-    db:AsyncSession = Depends(get_db),
-    current_user = Depends(get_current_user)
+    request: Request,
+    db: AsyncSession = Depends(get_db)
 ):
-    # защита от второго запроса
-    if not request.session:
-        return {"detail":"Dublicate callback ignored"}
+    # Retrieve user_id from session
+    user_id = request.session.get("link_user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User session not found")
+    
+    # Clean up session
+    request.session.pop("link_user_id", None)
     
     try:
         token = await oauth.google.authorize_access_token(request)
     except Exception:
         raise HTTPException(status_code=400, detail="Google auth error")
     
-    # получаем user info
+    # user info
     user_info = None
-
-    if token.get("id_token"):
+    if "id_token" in token:
         try:
             user_info = await oauth.google.parse_id_token(request, token)
         except Exception:
             user_info = None
-    
-    # fallback на userinfo endpoint
+            
     if not user_info:
         resp = await oauth.google.get(
             "https://openidconnect.googleapis.com/v1/userinfo",
             token=token
         )
-        if resp.status_code != 200:
-            raise HTTPException(401, "Failed to fetch userinfo from Google")
         user_info = resp.json()
 
     google_id = user_info.get("sub")
@@ -149,6 +155,11 @@ async def google_link_callback(
         raise HTTPException(status_code=400, detail="No google_id")
 
     repo = UserRepository(db)
+    # Fetch the user using the ID from session
+    current_user = await repo.get_by_id(user_id)
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     service = GoogleService(repo)
     try:
         await service.link_google(current_user, google_id)
@@ -156,4 +167,6 @@ async def google_link_callback(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return {"message":"Google account linked successfully"}
+    # Redirect back to the frontend profile page
+    frontend_profile_url = f"{settings.FRONTEND_URL}/profile"
+    return RedirectResponse(url=frontend_profile_url)
