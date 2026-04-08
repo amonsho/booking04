@@ -6,7 +6,7 @@ from app.repositories.user_repo import UserRepository
 from app.services.admin_service import AdminSerivce
 from app.auth.dependencies import get_admin_user
 from app.models.enums import UserRole
-from app.schemas.user import UserRead
+from app.schemas.user import UserRead, UserRoleUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -34,12 +34,12 @@ async def delete_user(
 @router.patch("/users/{user_id}/role", response_model=UserRead)
 async def change_user_role(
     user_id: int,
-    role: UserRole,
+    payload: UserRoleUpdate,
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user)
 ):
     repo = UserRepository(db)
     service = AdminSerivce(repo)
 
-    return await service.change_user_role(user_id, role)
+    return await service.change_user_role(user_id, payload.role)
 
