@@ -60,5 +60,8 @@ class ChangePasswordSchema(BaseModel):
     @model_validator(mode="after")
     def check_passwords_match(self):
         if self.new_password != self.new_password2:
-            raise ValueError("Пароли не совпадают")
+            raise ValueError("Пароль не совпадают")
         return self
+
+class UserRoleUpdate(BaseModel):
+    role: UserRole
