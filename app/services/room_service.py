@@ -79,5 +79,20 @@ class RoomService:
         await self.db.delete(room)
         await self.db.commit()
         return {"deleted": True, "id": room_id}
+    
+    async def search_room(max_price:float,min_prise:float,db:AsyncSession):
+        room = select(Room)
+        
+        if min_prise is not None:
+            room = room.where(Room.price >= min_prise)
+            
+        if max_price is not None:
+            room = room.where(Room.price <= max_price)
+            
+        result = await db.execute(room)
+        return result.scalars().all()
+    
+    
+    
         
     

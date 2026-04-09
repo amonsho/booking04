@@ -124,3 +124,8 @@ async def hotels_count(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(func.count(Hotel.id)))
     count = result.scalar()
     return {"hotels_count": count}
+
+@hotel_router.get('search_hotels/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    hotels = await HotelService.search_hotel(q,db)
+    return {"results": hotels}

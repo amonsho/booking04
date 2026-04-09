@@ -7,9 +7,11 @@ class Room(BaseModelClass):
 
     hotel_id = Column(Integer, ForeignKey("hotels.id"))
     room_type = Column(String)
+    number_room = Column(String)
     price = Column(Float)
     wifi = Column(Boolean)
     photo = Column(String)
+    
     
     
     bookings = relationship("Booking", back_populates="room")
