@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # Frontend URL to redirect to after successful OAuth (include protocol)
     FRONTEND_URL: Optional[str] = None
 
+    BREVO_API_KEY: Optional[str] = None
+    EMAIL_FROM: Optional[str] = None
+
     class Config:
         env_file = ".env"
         extra = "ignore"

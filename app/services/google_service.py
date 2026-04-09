@@ -30,17 +30,32 @@ class GoogleService:
         # user = await self.repo.get_by_email(email)
 
         if user:
-            # обновляем
-            # если есть user но нет google_id  привязываем
+            updated=False
+
+            #безопасность
+            if user.google_id and user.google_id != google_id:
+                raise Exception("Google account mismatch")
+            
+            #привязка google
             if not user.google_id:
                 user.google_id = google_id
+                updated = True
+            
+            if not user.is_verified:
+                user.is_verified =True
+                updated = True
 
+            #обновление данных
             if avatar and user.avatar != avatar:
                 user.avatar = avatar
+                updated = True
+
             if name and user.name != name:
                 user.name = name
-
-            user = await self.repo.update(user)
+                updated = True
+            
+            if updated:
+                user = await self.repo.update(user)
 
         else:
             # создаём
@@ -51,7 +66,8 @@ class GoogleService:
                 email=email,
                 password=hash_password(random_password),
                 avatar=avatar,
-                google_id=google_id
+                google_id=google_id,
+                is_verified=True
             )
 
             user = await self.repo.create(user)
