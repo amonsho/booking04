@@ -163,6 +163,39 @@ async def login(
             "refresh_token": refresh_token, 
             "token_type": "bearer"}
 
+@router.post("/refresh", response_model=TokenSchema)
+async def refresh_token(
+    payload: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    refresh_token = payload.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="Refresh token required")
+    
+    try:
+        from jose import jwt, JWTError
+        payload = jwt.decode(
+            refresh_token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM],
+            options={"leeway": 60}
+        )
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        
+        access_token = create_access_token({"sub": str(user_id)})
+        new_refresh_token = create_refresh_token({"sub": str(user_id)})
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer"
+        }
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+
 from app.services.user_service import UserService
 from app.repositories.user_repo import UserRepository
 
