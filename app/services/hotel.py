@@ -100,14 +100,10 @@ class HotelService:
         await self.db.commit()
 
         return {"deleted": True}
-
-
-
-
-
-        
     
-        
-        
-        
-        
+    async def search_hotel(q_hotel:str,db:AsyncSession):
+        hotel = select(Hotel).where(Hotel.name.ilike(f'%{q_hotel}%'))
+        result = await db.execute(hotel)
+        return result.scalars().all()
+    
+    

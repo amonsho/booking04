@@ -17,6 +17,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def create_room(
     hotel_id: int = Form(...),
     room_type: str = Form(...),
+    number_room:int = Form(...),
     price: float = Form(description="Цена должна быть больше 0"),
     wifi: bool = Form(...),
     photo: UploadFile = File(...),
@@ -34,7 +35,8 @@ async def create_room(
         room_type=room_type,
         price=price,
         wifi=wifi,
-        photo=file_path
+        photo=file_path,
+        number_room=number_room
     )
 
     service = RoomService(db)
@@ -97,9 +99,6 @@ async def update_room(
     return updated_room
 
 
-
-
-
 @room_router.delete("/{room_id}")
 async def delete_room(
     room_id: int,
@@ -109,3 +108,8 @@ async def delete_room(
     service = RoomService(db)
     return await service.delete_room(room_id)
 
+@room_router.get("search_room/")
+async def search_room(min_price:float,max_prise:float,db:AsyncSession=Depends(get_db)):
+    rooms = await RoomService.search_room(min_price,min_price,db)
+    return {"results": rooms}
+    
