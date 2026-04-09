@@ -35,6 +35,7 @@ class UserRead(BaseModel):
     role: UserRole
     avatar: str | None = None
     google_id: str | None = None
+    is_verified: bool = False
 
     model_config = {"from_attributes": True}
 

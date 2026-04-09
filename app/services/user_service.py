@@ -5,6 +5,9 @@ import shutil
 from fastapi import HTTPException
 from app.auth.auth import verify_password, hash_password
 
+from itsdangerous import URLSafeTimedSerializer
+from app.core.config import settings
+
 class UserService:
     def __init__(self, repo:UserRepository):
         self.repo = repo
@@ -62,3 +65,14 @@ class UserService:
 
         return {"message":"password update successfull"}
 
+    def generate_email_token(email: str) -> str:
+        serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
+        return serializer.dumps(email, salt="email-confirm")
+
+    def confirm_email_token(token: str, expiration=3600) -> str:
+        serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
+        try:
+            email = serializer.loads(token, salt="email-confirm", max_age=expiration)
+        except Exception:
+            return None
+        return email
