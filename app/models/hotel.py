@@ -8,6 +8,7 @@ class Hotel (BaseModelClass):
     
     photo = Column(String,nullable=False)
     name = Column(String,nullable=False)
+    country = Column(String,nullable=False)
     city = Column(String,nullable=False)
     address= Column(String,nullable=False)
     description = Column(String)

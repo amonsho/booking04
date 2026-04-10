@@ -74,6 +74,7 @@ async def hotels_count(db: AsyncSession = Depends(get_db)):
 async def add_hotel(
     name: str = Form(...),
     city: str = Form(...),
+    country:str = Form(...),
     address: str = Form(...),
     description: str = Form(None),
     photo: UploadFile = File(...),
@@ -91,6 +92,7 @@ async def add_hotel(
     hotel_data = HotelCreate(
         name=name,
         city=city,
+        country=country,
         address=address,
         description=description,
         photo=file_location
@@ -167,4 +169,24 @@ async def delete_hotel(
 
 
 
-# End of hotel router
+@hotel_router.get("/reports/hotels_count")
+async def hotels_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(func.count(Hotel.id)))
+    count = result.scalar()
+    return {"hotels_count": count}
+
+@hotel_router.get('/search_hotels/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    hotels = await HotelService.search_hotel(q,db)
+    return {"results": hotels}
+
+@hotel_router.get('/search_hotels_city/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    city = await HotelService.search_hotel_city(q,db)
+    return {"results": city}
+
+
+@hotel_router.get('/search_hotels_country/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    country = await HotelService.search_hotel_country(q,db)
+    return {"results": country}
