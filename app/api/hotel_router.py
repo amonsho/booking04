@@ -8,6 +8,7 @@ import uuid
 import aiofiles
 from app.models.hotel import Hotel
 from app.models.room import Room
+from app.models.user import User
 from sqlalchemy import func,select
 
 from app.auth.dependencies import get_current_user, get_admin_user
@@ -39,9 +40,35 @@ async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
 
 @hotel_router.get("/reports/hotels_count")
 async def hotels_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(func.count(Hotel.id)))
-    count = result.scalar()
-    return {"hotels_count": count}
+    # Total count
+    total_result = await db.execute(select(func.count(Hotel.id)))
+    total_hotels = total_result.scalar()
+
+    # Breakdown by city
+    city_result = await db.execute(
+        select(Hotel.city, func.count(Hotel.id)).group_by(Hotel.city)
+    )
+    by_city = {row[0]: row[1] for row in city_result.all() if row[0]}
+
+    # Breakdown by country (if field exists, else dummy empty)
+    # Since we don't have a explicit country field in the model yet, 
+    # we return an empty dict for by_country for now to satisfy the frontend interface.
+    
+    # Total rooms
+    rooms_result = await db.execute(select(func.count(Room.id)))
+    total_rooms = rooms_result.scalar()
+    
+    # Total users
+    users_result = await db.execute(select(func.count(User.id)))
+    total_users = users_result.scalar()
+    
+    return {
+        "total_hotels": total_hotels,
+        "total_rooms": total_rooms,
+        "total_users": total_users,
+        "by_city": by_city,
+        "by_country": {}
+    }
 
 @hotel_router.post("/", response_model=HotelResponse)
 async def add_hotel(
