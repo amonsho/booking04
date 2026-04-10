@@ -19,6 +19,30 @@ UPLOAD_DIR = "media"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 #----------------------------------------------------
+@hotel_router.get("/get_all", response_model=list[HotelResponse])
+async def get_all_hotels(
+    limit: int = 100,
+    offset: int = 0,
+    city: str | None = None,
+    country: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    user = Depends(get_current_user)
+):
+    service = HotelService(db)
+    hotels = await service.get_all_hotel(limit=limit, offset=offset, city=city, country=country)
+    return hotels
+
+@hotel_router.get('/search_hotels')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    hotels = await HotelService.search_hotel(q,db)
+    return {"results": hotels}
+
+@hotel_router.get("/reports/hotels_count")
+async def hotels_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(func.count(Hotel.id)))
+    count = result.scalar()
+    return {"hotels_count": count}
+
 @hotel_router.post("/", response_model=HotelResponse)
 async def add_hotel(
     name: str = Form(...),
@@ -50,11 +74,8 @@ async def add_hotel(
     return await service.create_hotel(hotel_data)
 
 
-@hotel_router.get("/get_all", response_model=list[HotelResponse])
-async def get_all_hotels(db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):
-    service = HotelService(db)
-    hotels = await service.get_all_hotel()
-    return hotels
+# (Routes moved up)
+
 
 
 @hotel_router.get('/{hotel_id}',response_model=HotelResponse)
@@ -119,13 +140,4 @@ async def delete_hotel(
 
 
 
-@hotel_router.get("/reports/hotels_count")
-async def hotels_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(func.count(Hotel.id)))
-    count = result.scalar()
-    return {"hotels_count": count}
-
-@hotel_router.get('search_hotels/')
-async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
-    hotels = await HotelService.search_hotel(q,db)
-    return {"results": hotels}
+# End of hotel router
