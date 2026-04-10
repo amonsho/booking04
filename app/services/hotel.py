@@ -106,4 +106,15 @@ class HotelService:
         result = await db.execute(hotel)
         return result.scalars().all()
     
+    async def search_hotel_city(q_city:str,db:AsyncSession):
+        city = select(Hotel).where(Hotel.city.ilike(f'%{q_city}%'))
+        result = await db.execute(city)
+        return result.scalars().all()
+    
+    async def search_hotel_country(q_country:str,db:AsyncSession):
+        country = select(Hotel).where(Hotel.country.ilike(f'%{q_country}%'))
+        
+        result = await db.execute(country)
+        return result.scalars().all()
+
     
