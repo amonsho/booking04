@@ -37,8 +37,16 @@ class HotelService:
         return new_hotel
     
     
-    async def get_all_hotel(self):
-        result = await self.db.execute(select(Hotel))
+    async def get_all_hotel(self, limit: int = 100, offset: int = 0, city: str | None = None, country: str | None = None):
+        query = select(Hotel)
+        if city:
+            query = query.where(Hotel.city.ilike(f"%{city}%"))
+        
+        # We only have city/address fields, so we filter by city if either is provided
+        # or we could search for country in the address if we had that field.
+        
+        query = query.limit(limit).offset(offset)
+        result = await self.db.execute(query)
         hotels = result.scalars().all()
         return hotels
     
@@ -102,8 +110,15 @@ class HotelService:
         return {"deleted": True}
     
     async def search_hotel(q_hotel:str,db:AsyncSession):
-        hotel = select(Hotel).where(Hotel.name.ilike(f'%{q_hotel}%'))
-        result = await db.execute(hotel)
+        from sqlalchemy import or_
+        query = select(Hotel).where(
+            or_(
+                Hotel.name.ilike(f'%{q_hotel}%'),
+                Hotel.city.ilike(f'%{q_hotel}%'),
+                Hotel.address.ilike(f'%{q_hotel}%')
+            )
+        )
+        result = await db.execute(query)
         return result.scalars().all()
     
     async def search_hotel_city(q_city:str,db:AsyncSession):
