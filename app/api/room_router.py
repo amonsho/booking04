@@ -67,6 +67,7 @@ async def update_room(
     price: float = Form(None),
     wifi: bool = Form(None),
     hotel_id: int = Form(None),
+    number_room: int = Form(None),
     photo: UploadFile = File(None),
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user),
@@ -83,6 +84,8 @@ async def update_room(
         update_data["wifi"] = wifi
     if hotel_id is not None:
         update_data["hotel_id"] = hotel_id
+    if number_room is not None:
+        update_data["number_room"] = number_room
 
     if photo is not None:
         file_name = f"{uuid.uuid4()}_{photo.filename}"
@@ -108,8 +111,8 @@ async def delete_room(
     service = RoomService(db)
     return await service.delete_room(room_id)
 
-@room_router.get("search_room/")
-async def search_room(min_price:float,max_prise:float,db:AsyncSession=Depends(get_db)):
-    rooms = await RoomService.search_room(min_price,min_price,db)
+@room_router.get("/search_room")
+async def search_room(min_price: float, max_price: float, db: AsyncSession = Depends(get_db)):
+    rooms = await RoomService.search_room(min_price, max_price, db)
     return {"results": rooms}
     

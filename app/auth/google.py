@@ -54,7 +54,8 @@ async def google_register_post(data: GoogleToken, db: AsyncSession = Depends(get
             "email": result["user"].email,
             "name": result["user"].name,
             "avatar": result["user"].avatar,
-            "is_verified": result["user"].is_verified
+            "is_verified": result["user"].is_verified,
+            "google_id": result["user"].google_id
         },
     }
 
