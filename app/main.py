@@ -72,9 +72,11 @@ app.include_router(google_router)
 from app.api.hotel_router import hotel_router
 from app.api.room_router import room_router
 from app.api.booking_router import booking_router as b_r
+from app.api.ai_router import router as ai_router
 app.include_router(hotel_router)
 app.include_router(room_router)
 app.include_router(b_r)
+app.include_router(ai_router)
 
 
 
