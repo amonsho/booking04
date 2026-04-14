@@ -3,3 +3,8 @@ from enum import Enum
 class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
+
+class PaymentStatus(str, Enum):
+    pending = "pending"
+    completed = "completed"
+    failed = "failed"
