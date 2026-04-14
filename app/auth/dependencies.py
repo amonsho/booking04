@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -31,6 +31,8 @@ async def get_user_by_token(token: str, db: AsyncSession):
                 detail="invalid token"
             )
         
+            
+        
         repo = UserRepository(db)
         user = await repo.get_by_id(int(user_id))
 
@@ -38,11 +40,15 @@ async def get_user_by_token(token: str, db: AsyncSession):
             raise HTTPException(status_code=404, detail="user not found")
 
         return user
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
+    
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid token"
         )
+
 
 
 async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
