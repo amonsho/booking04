@@ -35,6 +35,7 @@ from app.api.profile_router import router as profile_router
 from app.api.admin_router import router as admin_router
 from app.api.review_router import router as review_router
 from app.auth.google import router as google_router
+from app.api.payment_router import router as payment_router
 
 from fastapi.staticfiles import StaticFiles
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -67,6 +68,7 @@ app.include_router(profile_router)
 app.include_router(admin_router)
 app.include_router(review_router)
 app.include_router(google_router)
+app.include_router(payment_router)
 
 # -0-0-0-0--9--0-0-0-API ROMA -0-0-0-0-0-0
 from app.api.hotel_router import hotel_router

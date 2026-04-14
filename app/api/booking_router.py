@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends,HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.db.session import get_db
 from app.schemas.booking import BookingCreate, BookingResponse
 from app.services.booking_service import BookingService
-from app.auth.dependencies import get_current_user  
+from app.auth.dependencies import get_current_user, get_admin_user
+from app.models.booking import Booking
 
 booking_router = APIRouter(prefix="/booking", tags=["Booking"])
 
@@ -30,6 +32,18 @@ async def get_my_bookings(
 ):
     service = BookingService(db)
     return await service.get_user_bookings(current_user.id)
+
+
+@booking_router.get("/all", response_model=list[BookingResponse])
+async def get_all_bookings(
+    limit: int = 100,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user),
+):
+    """Get all bookings — admin only."""
+    result = await db.execute(select(Booking).limit(limit).offset(offset))
+    return result.scalars().all()
 
 
 @booking_router.delete("/{booking_id}")

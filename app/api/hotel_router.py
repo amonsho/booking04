@@ -9,6 +9,7 @@ import aiofiles
 from app.models.hotel import Hotel
 from app.models.room import Room
 from app.models.user import User
+from app.models.booking import Booking
 from sqlalchemy import func,select
 
 from app.auth.dependencies import get_current_user, get_admin_user
@@ -50,9 +51,11 @@ async def hotels_count(db: AsyncSession = Depends(get_db)):
     )
     by_city = {row[0]: row[1] for row in city_result.all() if row[0]}
 
-    # Breakdown by country (if field exists, else dummy empty)
-    # Since we don't have a explicit country field in the model yet, 
-    # we return an empty dict for by_country for now to satisfy the frontend interface.
+    # Breakdown by country
+    country_result = await db.execute(
+        select(Hotel.country, func.count(Hotel.id)).group_by(Hotel.country)
+    )
+    by_country = {row[0]: row[1] for row in country_result.all() if row[0]}
     
     # Total rooms
     rooms_result = await db.execute(select(func.count(Room.id)))
@@ -62,18 +65,24 @@ async def hotels_count(db: AsyncSession = Depends(get_db)):
     users_result = await db.execute(select(func.count(User.id)))
     total_users = users_result.scalar()
     
+    # Total bookings
+    bookings_result = await db.execute(select(func.count(Booking.id)))
+    total_bookings = bookings_result.scalar()
+
     return {
         "total_hotels": total_hotels,
         "total_rooms": total_rooms,
         "total_users": total_users,
+        "total_bookings": total_bookings,
         "by_city": by_city,
-        "by_country": {}
+        "by_country": by_country
     }
 
 @hotel_router.post("/", response_model=HotelResponse)
 async def add_hotel(
     name: str = Form(...),
     city: str = Form(...),
+    country:str = Form(...),
     address: str = Form(...),
     description: str = Form(None),
     photo: UploadFile = File(...),
@@ -91,6 +100,7 @@ async def add_hotel(
     hotel_data = HotelCreate(
         name=name,
         city=city,
+        country=country,
         address=address,
         description=description,
         photo=file_location
@@ -167,4 +177,24 @@ async def delete_hotel(
 
 
 
-# End of hotel router
+@hotel_router.get("/reports/hotels_count")
+async def hotels_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(func.count(Hotel.id)))
+    count = result.scalar()
+    return {"hotels_count": count}
+
+@hotel_router.get('/search_hotels/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    hotels = await HotelService.search_hotel(q,db)
+    return {"results": hotels}
+
+@hotel_router.get('/search_hotels_city/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    city = await HotelService.search_hotel_city(q,db)
+    return {"results": city}
+
+
+@hotel_router.get('/search_hotels_country/')
+async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
+    country = await HotelService.search_hotel_country(q,db)
+    return {"results": country}

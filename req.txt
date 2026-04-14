@@ -39,6 +39,7 @@ sib-api-v3-sdk==7.6.0
 six==1.17.0
 SQLAlchemy==2.0.48
 starlette==0.52.1
+stripe==15.0.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.6.3
