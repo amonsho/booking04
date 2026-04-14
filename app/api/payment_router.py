@@ -29,6 +29,10 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
     if booking.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your booking")
     
+    from app.models.booking import BookingStatus
+    if hasattr(booking, 'status') and booking.status == BookingStatus.CONFIRMED:
+        raise HTTPException(status_code=400, detail="Booking is already paid and confirmed")
+    
 
     manager = PaymentManager(repo)
     service = manager.get_service(data.provider)
@@ -38,7 +42,7 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
     return result
 
 @router.post("/payments/webhook")
-async def stripe_webhook(request:Request, db: AsyncSession = Depends(get_db)):
+async def stripe_webhook(request: Request, db=Depends(get_db)):
 
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -60,23 +64,47 @@ async def stripe_webhook(request:Request, db: AsyncSession = Depends(get_db)):
         print(f"Webhook error: unknown exception. Error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
-    if event["type"] == "checkout.session.completed":
+    if event.type == "checkout.session.completed":
 
-        session = event["data"]["object"]
+        session = event.data.object
 
-        booking_id = session["metadata"].get("booking_id")
+        metadata = getattr(session, "metadata", {}) or {}
+        
+        try:
+            booking_id = metadata["booking_id"] if "booking_id" in metadata else None
+        except TypeError:
+            booking_id = getattr(metadata, "booking_id", None)
+
+        if not booking_id:
+            raise HTTPException(status_code=404, detail="Booking not found in metadata")
 
         repo = BookingRepository(db)
         booking = await repo.get_by_id(int(booking_id))
 
-        if not booking_id:
-            raise HTTPException(status_code=404, detail="Booking not found")
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found in db")
+        
+        # We must use proper Enum values (lowercase values defined in Enums)
+        from app.models.booking import BookingStatus
+        if hasattr(booking, 'status') and booking.status == BookingStatus.CONFIRMED:
+            return {"status":"already processed"}
         
         booking.status = BookingStatus.CONFIRMED
+        db.add(booking)
+
+        # Also update payment status
+        from sqlalchemy import select
+        from app.models.payment import Payment
+        from app.models.enums import PaymentStatus
+        
+        payment_query = await db.execute(select(Payment).where(Payment.provider_payment_id == session.id))
+        payment = payment_query.scalar_one_or_none()
+        
+        if payment:
+            payment.status = PaymentStatus.completed
+            db.add(payment)
 
         await db.commit()
+        await db.refresh(booking)
 
-
-        print(f'Booking {booking_id} PAID success')
-    
     return {"status":"ok"}

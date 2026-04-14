@@ -25,7 +25,6 @@ class Booking(BaseModelClass):
 
     # created_at should use a callable default (no parentheses)
     created_at = Column(Date, default=datetime.utcnow)
-    is_available = Column(Boolean, default=False)
 
     # single status column using SQLAlchemy Enum for strong typing
     status = Column(SqlEnum(BookingStatus), default=BookingStatus.PENDING)

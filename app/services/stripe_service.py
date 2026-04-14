@@ -1,5 +1,7 @@
 import stripe
 from app.core.config import settings
+from app.models.payment import Payment
+from app.models.enums import PaymentStatus
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -30,6 +32,15 @@ class StripeService:
                 "booking_id": str(booking.id)
             }
         )
+
+        payment = Payment(
+            booking_id=booking.id,
+            provider="stripe",
+            status=PaymentStatus.pending,
+            amount=amount,
+            provider_payment_id=session.id
+        )
+        await self.repo.create(payment)
 
         return {
             "checkout_url": session.url

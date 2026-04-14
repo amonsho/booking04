@@ -19,6 +19,17 @@ class BookingService:
         room = await self.repo.get_room_by_id(booking_data.room_id)
         if not room:
             raise HTTPException(404, "Room not found")
+        if getattr(room, 'is_available', True) is False:
+            raise HTTPException(400, "Room is temporarily unavailable")
+
+        # Check for overlapping dates
+        is_overlap = await self.repo.check_overlap(
+            booking_data.room_id, 
+            booking_data.date_from, 
+            booking_data.date_to
+        )
+        if is_overlap:
+            raise HTTPException(400, "Room is already booked for these dates")
 
         total_price = days * room.price
 

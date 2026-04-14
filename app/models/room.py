@@ -11,6 +11,7 @@ class Room(BaseModelClass):
     price = Column(Float)
     wifi = Column(Boolean)
     photo = Column(String)
+    is_available = Column(Boolean, default=True)
     
     
     
