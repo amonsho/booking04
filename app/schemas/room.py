@@ -8,6 +8,7 @@ class RoomBase(BaseModel):
     price: float
     wifi: bool
     photo: str  
+    is_available: bool = True
     
 class RoomCreate(RoomBase):
     pass

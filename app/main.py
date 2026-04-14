@@ -17,13 +17,13 @@ async def init_models():
         # If the table was created before adding columns in the model,
         # `create_all()` won't modify the schema and inserts will fail.
         if "sqlite" in str(engine.url):
-            res = await conn.execute(text("PRAGMA table_info(bookings);"))
+            res = await conn.execute(text("PRAGMA table_info(rooms);"))
             rows = res.fetchall()
             existing_cols = {r[1] for r in rows}  # PRAGMA: (cid, name, type, ...)
             if "is_available" not in existing_cols:
                 await conn.execute(
                     text(
-                        "ALTER TABLE bookings ADD COLUMN is_available BOOLEAN DEFAULT 0;"
+                        "ALTER TABLE rooms ADD COLUMN is_available BOOLEAN DEFAULT 1;"
                     )
                 )
 
