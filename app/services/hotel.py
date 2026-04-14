@@ -41,9 +41,8 @@ class HotelService:
         query = select(Hotel)
         if city:
             query = query.where(Hotel.city.ilike(f"%{city}%"))
-        
-        # We only have city/address fields, so we filter by city if either is provided
-        # or we could search for country in the address if we had that field.
+        if country:
+            query = query.where(Hotel.country.ilike(f"%{country}%"))
         
         query = query.limit(limit).offset(offset)
         result = await self.db.execute(query)
@@ -115,6 +114,7 @@ class HotelService:
             or_(
                 Hotel.name.ilike(f'%{q_hotel}%'),
                 Hotel.city.ilike(f'%{q_hotel}%'),
+                Hotel.country.ilike(f'%{q_hotel}%'),
                 Hotel.address.ilike(f'%{q_hotel}%')
             )
         )

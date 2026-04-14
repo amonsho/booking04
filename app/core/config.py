@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     BREVO_API_KEY: Optional[str] = None
     EMAIL_FROM: Optional[str] = None
 
+<<<<<<< HEAD
+    OPENAI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+=======
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_PUBLIC_KEY: Optional[str] = None
+
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+>>>>>>> cfa843f27c158c8134d2e89e83ee462d8f57da8a
+
     class Config:
         env_file = ".env"
         extra = "ignore"
