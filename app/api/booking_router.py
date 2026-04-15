@@ -70,7 +70,8 @@ async def delete_booking(
 @booking_router.post("/{booking_id}/cancel")
 async def cancel_booking(
     booking_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     # 1. найти booking
     repo = BookingRepository(db)
@@ -78,6 +79,10 @@ async def cancel_booking(
 
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Проверяем, что пользователь — владелец или admin
+    if booking.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this booking")
 
     # 2. если уже отменён
     if booking.status == BookingStatus.CANCELLED:
@@ -109,13 +114,13 @@ async def cancel_booking(
     stripe_service = StripeService(payment_repo)
 
     refund = await stripe_service.refund_payment(
-        payment.provider_payment_id  # ← ВАЖНО
+        payment.provider_payment_id  # ← ВАЖНО (может быть как cs_test, так и pi_test)
     )
 
     # 7. обновляем booking
     booking.status = BookingStatus.CANCELLED
 
-    # 8. обновляем payment
+    # 8. обновляем payment (даже если рефанд не делался, помечаем как отменен/рефанднут)
     payment.status = PaymentStatus.refunded
 
     db.add(booking)
@@ -125,6 +130,6 @@ async def cancel_booking(
 
     return {
         "status": "cancelled",
-        "refund": "success",
-        "refund_id": refund.id
+        "refund": "success" if refund else "unpaid_cancelled",
+        "refund_id": getattr(refund, "id", None)
     }

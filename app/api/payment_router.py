@@ -114,7 +114,7 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
 
     return {"status":"ok"}
 
-@router.post("payments/{payment_id}/refund")
+@router.post("/payments/{payment_id}/refund")
 async def refund_payment(payment_id: int, db:AsyncSession = Depends(get_db)):
     payment = await db.get(Payment, payment_id)
 
