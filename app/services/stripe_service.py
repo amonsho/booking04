@@ -38,10 +38,16 @@ class StripeService:
             provider="stripe",
             status=PaymentStatus.pending,
             amount=amount,
-            provider_payment_id=session.id
+            provider_payment_id=session.id  # Store Session ID (cs_...)
         )
         await self.repo.create(payment)
 
         return {
             "checkout_url": session.url
         }
+    
+    async def refund_payment(self, payment_intent_id:str):
+        refund = stripe.Refund.create(
+            payment_intent=payment_intent_id
+        )
+        return refund
