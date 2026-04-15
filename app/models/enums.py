@@ -8,3 +8,5 @@ class PaymentStatus(str, Enum):
     pending = "pending"
     completed = "completed"
     failed = "failed"
+    paid = "paid"
+    refunded = "refunded"

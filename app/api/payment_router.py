@@ -8,6 +8,8 @@ from app.schemas.payment import CreatePaymentSchema
 from app.core.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.booking import BookingStatus
+from app.models.payment import Payment
+from app.services.stripe_service import StripeService
 
 from app.repositories.booking_repository import BookingRepository
 
@@ -102,9 +104,33 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
         
         if payment:
             payment.status = PaymentStatus.completed
+            # Swap the Session ID (cs_...) with the actual Payment Intent ID (pi_...) for refunds
+            if hasattr(session, "payment_intent") and session.payment_intent:
+                payment.provider_payment_id = session.payment_intent
             db.add(payment)
 
         await db.commit()
         await db.refresh(booking)
 
     return {"status":"ok"}
+
+@router.post("payments/{payment_id}/refund")
+async def refund_payment(payment_id: int, db:AsyncSession = Depends(get_db)):
+    payment = await db.get(Payment, payment_id)
+
+    if not payment:
+        raise HTTPException(status_code=404, detail="payment not found")
+    
+    if not payment.provider_payment_id or not payment.provider_payment_id.startswith("pi_"):
+        raise HTTPException(status_code=400, detail="Cannot refund a pending or invalid payment. Refund only works for completed payments.")
+
+    repo = PaymentRepository(db)
+    service = StripeService(repo)
+
+    try:
+        refund = await service.refund_payment(payment.provider_payment_id)
+        payment.status = "refunded"
+        await db.commit()
+        return {"status": "refunded", "refund_id": refund.id}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
