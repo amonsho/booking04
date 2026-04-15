@@ -46,7 +46,17 @@ class StripeService:
             "checkout_url": session.url
         }
     
-    async def refund_payment(self, payment_intent_id:str):
+    async def refund_payment(self, session_or_intent_id: str):
+        if session_or_intent_id.startswith("cs_"):
+            # It's a Checkout Session, we need the Payment Intent
+            session = stripe.checkout.Session.retrieve(session_or_intent_id)
+            if not session.payment_intent:
+                # User never completed the payment during this session
+                return None
+            payment_intent_id = session.payment_intent
+        else:
+            payment_intent_id = session_or_intent_id
+
         refund = stripe.Refund.create(
             payment_intent=payment_intent_id
         )

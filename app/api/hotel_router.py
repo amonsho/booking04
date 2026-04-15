@@ -129,34 +129,34 @@ async def update_hotel(
     hotel_id: int,
     name: str | None = Form(None),
     city: str | None = Form(None),
+    country: str | None = Form(None),
     address: str | None = Form(None),
     description: str | None = Form(None),
     photo: UploadFile | None = File(None),
     service: HotelService = Depends(HotelService.get_hotel_service),
     admin = Depends(get_admin_user)
 ):
-
     update_data = {}
 
     if name is not None:
         update_data["name"] = name
     if city is not None:
         update_data["city"] = city
+    if country is not None:
+        update_data["country"] = country
     if address is not None:
         update_data["address"] = address
     if description is not None:
         update_data["description"] = description
 
-
-
     if photo:
         file_name = f"{uuid.uuid4()}_{photo.filename}"
         file_path = os.path.join(UPLOAD_DIR, file_name)
 
-        with open(file_path, "wb") as buffer:
-            buffer.write(await photo.read())
+        async with aiofiles.open(file_path, "wb") as buffer:
+            await buffer.write(await photo.read())
 
-        update_data["photo"] = file_name 
+        update_data["photo"] = file_path
 
     hotel_data = HotelUpdate(**update_data)
 
@@ -177,24 +177,5 @@ async def delete_hotel(
 
 
 
-@hotel_router.get("/reports/hotels_count")
-async def hotels_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(func.count(Hotel.id)))
-    count = result.scalar()
-    return {"hotels_count": count}
-
-@hotel_router.get('/search_hotels/')
-async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
-    hotels = await HotelService.search_hotel(q,db)
-    return {"results": hotels}
-
-@hotel_router.get('/search_hotels_city/')
-async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
-    city = await HotelService.search_hotel_city(q,db)
-    return {"results": city}
-
-
-@hotel_router.get('/search_hotels_country/')
-async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
-    country = await HotelService.search_hotel_country(q,db)
-    return {"results": country}
+# NOTE: duplicate routes removed — reports/hotels_count and search_hotels
+# are already defined above at lines 42 and 37 respectively.
