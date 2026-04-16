@@ -13,6 +13,10 @@ class AdminSerivce:
         users = await self.repo.get_all()
         return users
     
+    async def get_deleted_users(self):
+        users = await self.repo.get_deleted_all()
+        return users
+    
     async def delete_user(self, user_id: int):
         user = await self.repo.get_by_id(user_id)
 
@@ -37,4 +41,13 @@ class AdminSerivce:
         user.role = role
 
         await self.repo.update(user)
+        return user
+
+    async def restore_user(self, user_id: int):
+        user = await self.repo.restore(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
         return user

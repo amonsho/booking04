@@ -16,7 +16,8 @@ class HotelService:
         result = await self.db.execute(
             select(Hotel).where(
                 Hotel.name == hotel.name,
-                Hotel.city == hotel.city
+                Hotel.city == hotel.city,
+                Hotel.is_deleted == False
             )
         )
 
@@ -37,12 +38,12 @@ class HotelService:
         return new_hotel
     
     
-    async def get_all_hotel(self, limit: int = 100, offset: int = 0, city: str | None = None, country: str | None = None):
-        query = select(Hotel)
-        if city:
-            query = query.where(Hotel.city.ilike(f"%{city}%"))
-        if country:
-            query = query.where(Hotel.country.ilike(f"%{country}%"))
+    async def get_all_hotel(self, limit: int = 10, offset: int = 0, q_city: str | None = None, q_country: str | None = None):
+        query = select(Hotel).where(Hotel.is_deleted == False)
+        if q_city:
+            query = query.where(Hotel.city.ilike(f"%{q_city}%"))
+        if q_country:
+            query = query.where(Hotel.country.ilike(f"%{q_country}%"))
         
         query = query.limit(limit).offset(offset)
         result = await self.db.execute(query)
@@ -51,7 +52,7 @@ class HotelService:
     
     async def search_hotel_by_id(self, hotel_id: int):
         result = await self.db.execute(
-            select(Hotel).where(Hotel.id == hotel_id)
+            select(Hotel).where(Hotel.id == hotel_id, Hotel.is_deleted == False)
         )
         hotel = result.scalar_one_or_none()
 
@@ -59,10 +60,35 @@ class HotelService:
             raise HTTPException(status_code=404, detail="Такого hotel нет")
 
         return hotel
+
+    async def _get_hotel_any(self, hotel_id: int):
+        """Internal helper to get hotel regardless of is_deleted status"""
+        result = await self.db.execute(
+            select(Hotel).where(Hotel.id == hotel_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_deleted_hotels(self, limit: int = 10, offset: int = 0):
+        result = await self.db.execute(
+            select(Hotel).where(Hotel.is_deleted == True).limit(limit).offset(offset)
+        )
+        return result.scalars().all()
+
+    async def restore_hotel(self, hotel_id: int):
+        hotel = await self._get_hotel_any(hotel_id)
+        if not hotel:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        
+        hotel.is_deleted = False
+        await self.db.commit()
+        await self.db.refresh(hotel)
+        return hotel
+
     async def update_hotel(self, hotel_id:int , hotel_data:HotelUpdate):
         result = await self.db.execute(
             select(Hotel).where(
-                Hotel.id == hotel_id 
+                Hotel.id == hotel_id,
+                Hotel.is_deleted == False
             )
         )
         
@@ -89,28 +115,17 @@ class HotelService:
 
 
     async def delete_hotel(self, hotel_id: int):
-        result = await self.db.execute(
-            select(Hotel).where(Hotel.id == hotel_id)
-     )
-        hotel = result.scalar_one_or_none()
-
+        hotel = await self.get_hotel_by_id(hotel_id)
         if not hotel:
-            raise HTTPException(status_code=404, detail="Такого hotel нет!")
-
-
-        if hotel.photo:
-            file_path = os.path.join(UPLOAD_DIR, hotel.photo)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-
-        await self.db.delete(hotel)
+            return False
+        hotel.is_deleted = True
         await self.db.commit()
-
-        return {"deleted": True}
+        return True
     
-    async def search_hotel(q_hotel:str,db:AsyncSession):
+    async def search_hotel(self, q_hotel:str):
         from sqlalchemy import or_
         query = select(Hotel).where(
+            Hotel.is_deleted == False,
             or_(
                 Hotel.name.ilike(f'%{q_hotel}%'),
                 Hotel.city.ilike(f'%{q_hotel}%'),
@@ -118,18 +133,16 @@ class HotelService:
                 Hotel.address.ilike(f'%{q_hotel}%')
             )
         )
-        result = await db.execute(query)
+        result = await self.db.execute(query)
         return result.scalars().all()
     
-    async def search_hotel_city(q_city:str,db:AsyncSession):
-        city = select(Hotel).where(Hotel.city.ilike(f'%{q_city}%'))
-        result = await db.execute(city)
+    async def autocomplete_city(self, q_city: str):
+        city = select(Hotel).where(Hotel.city.ilike(f'%{q_city}%'), Hotel.is_deleted == False)
+        result = await self.db.execute(city)
         return result.scalars().all()
     
-    async def search_hotel_country(q_country:str,db:AsyncSession):
-        country = select(Hotel).where(Hotel.country.ilike(f'%{q_country}%'))
+    async def autocomplete_country(self, q_country: str):
+        country = select(Hotel).where(Hotel.country.ilike(f'%{q_country}%'), Hotel.is_deleted == False)
         
-        result = await db.execute(country)
+        result = await self.db.execute(country)
         return result.scalars().all()
-
-    

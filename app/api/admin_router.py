@@ -20,6 +20,16 @@ async def get_all_users(
 
     return await service.get_all_users()
 
+@router.get("/users/deleted", response_model=list[UserRead])
+async def get_deleted_users(
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    repo = UserRepository(db)
+    service = AdminSerivce(repo)
+
+    return await service.get_deleted_users()
+
 @router.delete("/users/{user_id}", response_model=dict)
 async def delete_user(
     user_id:int,
@@ -42,4 +52,15 @@ async def change_user_role(
     service = AdminSerivce(repo)
 
     return await service.change_user_role(user_id, payload.role)
+
+@router.post("/users/{user_id}/restore", response_model=UserRead)
+async def restore_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    repo = UserRepository(db)
+    service = AdminSerivce(repo)
+
+    return await service.restore_user(user_id)
 

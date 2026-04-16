@@ -31,7 +31,7 @@ async def get_all_hotels(
     user = Depends(get_current_user)
 ):
     service = HotelService(db)
-    hotels = await service.get_all_hotel(limit=limit, offset=offset, city=city, country=country)
+    hotels = await service.get_all_hotel(limit=limit, offset=offset, q_city=city, q_country=country)
     return hotels
 
 @hotel_router.get('/search_hotels')
@@ -42,31 +42,35 @@ async def  search_hotels(q:str,db:AsyncSession = Depends(get_db)):
 @hotel_router.get("/reports/hotels_count")
 async def hotels_count(db: AsyncSession = Depends(get_db)):
     # Total count
-    total_result = await db.execute(select(func.count(Hotel.id)))
+    total_result = await db.execute(select(func.count(Hotel.id)).where(Hotel.is_deleted == False))
     total_hotels = total_result.scalar()
 
     # Breakdown by city
     city_result = await db.execute(
-        select(Hotel.city, func.count(Hotel.id)).group_by(Hotel.city)
+        select(Hotel.city, func.count(Hotel.id))
+        .where(Hotel.is_deleted == False)
+        .group_by(Hotel.city)
     )
     by_city = {row[0]: row[1] for row in city_result.all() if row[0]}
 
     # Breakdown by country
     country_result = await db.execute(
-        select(Hotel.country, func.count(Hotel.id)).group_by(Hotel.country)
+        select(Hotel.country, func.count(Hotel.id))
+        .where(Hotel.is_deleted == False)
+        .group_by(Hotel.country)
     )
     by_country = {row[0]: row[1] for row in country_result.all() if row[0]}
     
     # Total rooms
-    rooms_result = await db.execute(select(func.count(Room.id)))
+    rooms_result = await db.execute(select(func.count(Room.id)).where(Room.is_deleted == False))
     total_rooms = rooms_result.scalar()
     
     # Total users
-    users_result = await db.execute(select(func.count(User.id)))
+    users_result = await db.execute(select(func.count(User.id)).where(User.is_deleted == False))
     total_users = users_result.scalar()
     
     # Total bookings
-    bookings_result = await db.execute(select(func.count(Booking.id)))
+    bookings_result = await db.execute(select(func.count(Booking.id)).where(Booking.is_deleted == False))
     total_bookings = bookings_result.scalar()
 
     return {
@@ -115,6 +119,17 @@ async def add_hotel(
 
 
 
+@hotel_router.get("/deleted", response_model=list[HotelResponse])
+async def get_deleted_hotels(
+    limit: int = 100,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    service = HotelService(db)
+    return await service.get_deleted_hotels(limit=limit, offset=offset)
+
+
 @hotel_router.get('/{hotel_id}',response_model=HotelResponse)
 async def get_by_id(hotel_id:int,db:AsyncSession = Depends(get_db), user = Depends(get_current_user)):
     service = HotelService(db)
@@ -161,6 +176,18 @@ async def update_hotel(
     hotel_data = HotelUpdate(**update_data)
 
     return await service.update_hotel(hotel_id, hotel_data)
+
+
+
+
+@hotel_router.post("/{hotel_id}/restore", response_model=HotelResponse)
+async def restore_hotel(
+    hotel_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    service = HotelService(db)
+    return await service.restore_hotel(hotel_id)
 
 
 @hotel_router.delete("/{hotel_id}")
