@@ -51,6 +51,33 @@ async def get_all_rooms(
     return await service.get_all_rooms()
 
 
+@room_router.get("/deleted", response_model=list[RoomResponse])
+async def get_deleted_rooms(
+    limit: int = 100,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    service = RoomService(db)
+    return await service.get_deleted_rooms(limit=limit, offset=offset)
+
+
+@room_router.get("/search_room")
+async def search_room(min_price: float, max_price: float, db: AsyncSession = Depends(get_db)):
+    rooms = await RoomService.search_room(min_price, max_price, db)
+    return {"results": rooms}
+
+
+@room_router.post("/{room_id}/restore", response_model=RoomResponse)
+async def restore_room(
+    room_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    service = RoomService(db)
+    return await service.restore_room(room_id)
+
+
 @room_router.get("/{room_id}", response_model=RoomResponse)
 async def get_room(
     room_id: int,
@@ -110,9 +137,4 @@ async def delete_room(
 ):
     service = RoomService(db)
     return await service.delete_room(room_id)
-
-@room_router.get("/search_room")
-async def search_room(min_price: float, max_price: float, db: AsyncSession = Depends(get_db)):
-    rooms = await RoomService.search_room(min_price, max_price, db)
-    return {"results": rooms}
     

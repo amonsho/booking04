@@ -17,31 +17,36 @@ class ReviewRepository:
         result = await self.session.execute(
             select(Review).where(
                 Review.user_id == user_id,
-                Review.hotel_id == hotel_id
+                Review.hotel_id == hotel_id,
+                Review.is_deleted == False
             )
         )
         return result.scalars().first()
     
     async def get_hotel_reviews(self, hotel_id:int, limit:int, offset:int):
         result = await self.session.execute(
-            select(Review).where(Review.hotel_id == hotel_id)
+            select(Review).where(
+                Review.hotel_id == hotel_id,
+                Review.is_deleted == False
+            ).limit(limit).offset(offset)
         )
         return result.scalars().all()
     
     async def get_average_rating(self, hotel_id:int):
         result = await self.session.execute(
             select(func.avg(Review.rating)).where(
-                Review.hotel_id == hotel_id
+                Review.hotel_id == hotel_id,
+                Review.is_deleted == False
             )
         )
         return result.scalar()
     
     async def get_by_id(self, review_id: int):
         result = await self.session.execute(
-            select(Review).where(Review.id == review_id)
+            select(Review).where(Review.id == review_id, Review.is_deleted == False)
         )
         return result.scalars().first()
     
-    async def delete(self, review:Review):
-        await self.session.delete(review)
+    async def delete(self, review: Review):
+        review.is_deleted = True
         await self.session.commit()

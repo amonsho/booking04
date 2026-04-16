@@ -44,9 +44,9 @@ class BookingService:
     async def get_user_bookings(self, user_id: int):
         return await self.repo.get_bookings_by_user(user_id)
     
-
-    async def delete_room(self, room_id: int):
-        raise HTTPException(status_code=400, detail="Deleting rooms is not supported by BookingService")
+    async def get_deleted_bookings(self):
+        return await self.repo.get_deleted_all()
+    
 
     async def delete_booking(self, booking_id: int):
         booking = await self.repo.get_by_id(booking_id)
@@ -58,6 +58,12 @@ class BookingService:
             raise HTTPException(status_code=500, detail="Failed to delete booking")
 
         return {"message": "Booking deleted successfully", "id": booking_id}
+
+    async def restore_booking(self, booking_id: int):
+        booking = await self.repo.restore(booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return booking
     
     
     

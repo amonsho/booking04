@@ -48,8 +48,18 @@ async def get_all_bookings(
     admin = Depends(get_admin_user),
 ):
     """Get all bookings — admin only."""
-    result = await db.execute(select(Booking).limit(limit).offset(offset))
+    result = await db.execute(select(Booking).where(Booking.is_deleted == False).limit(limit).offset(offset))
     return result.scalars().all()
+
+
+@booking_router.get("/deleted", response_model=list[BookingResponse])
+async def get_deleted_bookings(
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user),
+):
+    """Get all soft-deleted bookings — admin only."""
+    service = BookingService(db)
+    return await service.get_deleted_bookings()
 
 
 @booking_router.delete("/{booking_id}")
@@ -133,3 +143,13 @@ async def cancel_booking(
         "refund": "success" if refund else "unpaid_cancelled",
         "refund_id": getattr(refund, "id", None)
     }
+
+@booking_router.post("/{booking_id}/restore", response_model=BookingResponse)
+async def restore_booking(
+    booking_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(get_admin_user)
+):
+    """Restore a soft-deleted booking — admin only."""
+    service = BookingService(db)
+    return await service.restore_booking(booking_id)

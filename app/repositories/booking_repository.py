@@ -8,7 +8,7 @@ class BookingRepository:
 
     async def get_room_by_id(self, room_id: int):
         result = await self.db.execute(
-            select(Room).where(Room.id == room_id)
+            select(Room).where(Room.id == room_id, Room.is_deleted == False)
         )
         return result.scalar_one_or_none()
 
@@ -25,6 +25,7 @@ class BookingRepository:
         result = await self.db.execute(
             select(Booking).where(
                 Booking.room_id == room_id,
+                Booking.is_deleted == False,
                 or_(
                     and_(Booking.date_from <= date_from, Booking.date_to >= date_from),
                     and_(Booking.date_from <= date_to, Booking.date_to >= date_to),
@@ -36,7 +37,7 @@ class BookingRepository:
 
     async def get_bookings_by_user(self, user_id: int):
         result = await self.db.execute(
-            select(Booking).where(Booking.user_id == user_id)
+            select(Booking).where(Booking.user_id == user_id, Booking.is_deleted == False)
         )
         return result.scalars().all()
     
@@ -44,20 +45,42 @@ class BookingRepository:
 
     async def get_bookings_by_room(self, room_id: int):
         result = await self.db.execute(
-        select(Booking).where(Booking.room_id == room_id)
+        select(Booking).where(Booking.room_id == room_id, Booking.is_deleted == False)
         )
         return result.scalars().all()
 
     async def get_by_id(self, booking_id: int):
         result = await self.db.execute(
+            select(Booking).where(Booking.id == booking_id, Booking.is_deleted == False)
+        )
+        return result.scalar_one_or_none()
+
+    async def _get_by_id_any(self, booking_id: int):
+        result = await self.db.execute(
             select(Booking).where(Booking.id == booking_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_deleted_all(self):
+        result = await self.db.execute(
+            select(Booking).where(Booking.is_deleted == True)
+        )
+        return result.scalars().all()
+
+    async def restore(self, booking_id: int):
+        booking = await self._get_by_id_any(booking_id)
+        if not booking:
+            return None
+        
+        booking.is_deleted = False
+        await self.db.commit()
+        await self.db.refresh(booking)
+        return booking
 
     async def delete_booking_by_id(self, booking_id: int):
         booking = await self.get_by_id(booking_id)
         if not booking:
             return False
-        await self.db.delete(booking)
+        booking.is_deleted = True
         await self.db.commit()
         return True
