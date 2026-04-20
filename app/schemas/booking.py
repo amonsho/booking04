@@ -34,4 +34,13 @@ class BookingResponse(BaseModel):
     status: str
     total_price: int | None
     guests: int
+    
     model_config = {"from_attributes": True}
+
+class BookingWithDetailsResponse(BookingResponse):
+    room: Optional['RoomResponse'] = None
+    hotel: Optional['HotelResponse'] = None
+
+from app.schemas.room import RoomResponse
+from app.schemas.hotel import HotelResponse
+BookingWithDetailsResponse.model_rebuild()

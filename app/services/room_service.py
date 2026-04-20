@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.models.room import Room
 from app.schemas.room import RoomCreate , RoomUpdate
@@ -25,25 +26,56 @@ class RoomService:
                 detail="Комната уже есть в этом отеле!"
             )
 
-        new_room = Room(**room.model_dump())
+        room_dict = room.model_dump()
+        if isinstance(room_dict.get("photos"), list):
+            room_dict["photos"] = ";".join(room_dict["photos"])
+            
+        new_room = Room(**room_dict)
         self.db.add(new_room)
         await self.db.commit()
-        await self.db.refresh(new_room)
+        await self.db.refresh(new_room, attribute_names=["hotel"])
+        
+        # Load hotel explicitly after commit/refresh
+        result = await self.db.execute(
+            select(Room).options(selectinload(Room.hotel)).where(Room.id == new_room.id)
+        )
+        new_room = result.scalar_one()
+        
+        # Convert back for response
+        if new_room.photos:
+            new_room.photos = new_room.photos.split(";")
+        else:
+            new_room.photos = []
         return new_room
     
        
-    async def get_all_rooms(self):
-        result = await self.db.execute(select(Room).where(Room.is_deleted == False))
-        return result.scalars().all()
+    async def get_all_rooms(self, hotel_id: int = None):
+        query = select(Room).options(selectinload(Room.hotel)).where(Room.is_deleted == False)
+        if hotel_id is not None:
+            query = query.where(Room.hotel_id == hotel_id)
+            
+        result = await self.db.execute(query)
+        rooms = result.scalars().all()
+        for room in rooms:
+            if room.photos:
+                room.photos = room.photos.split(";")
+            else:
+                room.photos = []
+        return rooms
     
     async def search_room_by_id(self, room_id: int):
         result = await self.db.execute(
-            select(Room).where(Room.id == room_id, Room.is_deleted == False)
+            select(Room).options(selectinload(Room.hotel)).where(Room.id == room_id, Room.is_deleted == False)
         )
         room = result.scalar_one_or_none()
 
         if not room:
             raise HTTPException(status_code=404, detail="Такой комнаты нет")
+        
+        if room.photos:
+            room.photos = room.photos.split(";")
+        else:
+            room.photos = []
         return room
 
     async def _get_room_any(self, room_id: int):
@@ -55,9 +87,15 @@ class RoomService:
 
     async def get_deleted_rooms(self, limit: int = 100, offset: int = 0):
         result = await self.db.execute(
-            select(Room).where(Room.is_deleted == True).limit(limit).offset(offset)
+            select(Room).options(selectinload(Room.hotel)).where(Room.is_deleted == True).limit(limit).offset(offset)
         )
-        return result.scalars().all()
+        rooms = result.scalars().all()
+        for room in rooms:
+            if room.photos:
+                room.photos = room.photos.split(";")
+            else:
+                room.photos = []
+        return rooms
 
     async def restore_room(self, room_id: int):
         room = await self._get_room_any(room_id)
@@ -66,7 +104,17 @@ class RoomService:
         
         room.is_deleted = False
         await self.db.commit()
-        await self.db.refresh(room)
+        
+        # Reload with hotel relationship
+        result = await self.db.execute(
+            select(Room).options(selectinload(Room.hotel)).where(Room.id == room_id)
+        )
+        room = result.scalar_one()
+        
+        if room.photos:
+            room.photos = room.photos.split(";")
+        else:
+            room.photos = []
         return room
 
 
@@ -77,13 +125,24 @@ class RoomService:
         if not room:
             return None
 
-
         for key, value in update_data.items():
+            if key == "photos" and isinstance(value, list):
+                value = ";".join(value)
             setattr(room, key, value)
 
         self.db.add(room)
         await self.db.commit()
-        await self.db.refresh(room)
+        
+        # Reload with hotel relationship
+        result = await self.db.execute(
+            select(Room).options(selectinload(Room.hotel)).where(Room.id == room_id)
+        )
+        room = result.scalar_one()
+        
+        if room.photos:
+            room.photos = room.photos.split(";")
+        else:
+            room.photos = []
         return room
     
     

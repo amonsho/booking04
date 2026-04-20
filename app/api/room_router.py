@@ -17,25 +17,31 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def create_room(
     hotel_id: int = Form(...),
     room_type: str = Form(...),
-    number_room:int = Form(...),
+    number_room: int = Form(...),
     price: float = Form(description="Цена должна быть больше 0"),
     wifi: bool = Form(...),
-    photo: UploadFile = File(...),
+    photos: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user),
 ):
-    file_name = f"{uuid.uuid4()}_{photo.filename}"
-    file_path = f"{UPLOAD_DIR}/{file_name}"
+    if len(photos) > 10:
+        raise HTTPException(status_code=400, detail="Максимум 10 фотографий")
 
-    async with aiofiles.open(file_path, "wb") as f:
-        await f.write(await photo.read())
+    saved_photos = []
+    for photo in photos:
+        file_name = f"{uuid.uuid4()}_{photo.filename}"
+        file_path = f"{UPLOAD_DIR}/{file_name}"
+
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(await photo.read())
+        saved_photos.append(file_path)
 
     room_data = RoomCreate(
         hotel_id=hotel_id,
         room_type=room_type,
         price=price,
         wifi=wifi,
-        photo=file_path,
+        photos=saved_photos,
         number_room=number_room
     )
 
@@ -45,10 +51,11 @@ async def create_room(
 
 @room_router.get("/", response_model=list[RoomResponse])
 async def get_all_rooms(
+    hotel_id: int | None = None,
     db: AsyncSession = Depends(get_db)
 ):
     service = RoomService(db)
-    return await service.get_all_rooms()
+    return await service.get_all_rooms(hotel_id=hotel_id)
 
 
 @room_router.get("/deleted", response_model=list[RoomResponse])
@@ -95,7 +102,7 @@ async def update_room(
     wifi: bool = Form(None),
     hotel_id: int = Form(None),
     number_room: int = Form(None),
-    photo: UploadFile = File(None),
+    photos: list[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user),
 ):
@@ -114,13 +121,19 @@ async def update_room(
     if number_room is not None:
         update_data["number_room"] = number_room
 
-    if photo is not None:
-        file_name = f"{uuid.uuid4()}_{photo.filename}"
-        file_path = os.path.join(UPLOAD_DIR, file_name)
-        async with aiofiles.open(file_path, "wb") as f:
-            await f.write(await photo.read())
-        # store full path like on create
-        update_data["photo"] = file_path
+    if photos is not None:
+        if len(photos) > 10:
+            raise HTTPException(status_code=400, detail="Максимум 10 фотографий")
+            
+        saved_photos = []
+        for photo in photos:
+            file_name = f"{uuid.uuid4()}_{photo.filename}"
+            file_path = os.path.join(UPLOAD_DIR, file_name)
+            async with aiofiles.open(file_path, "wb") as f:
+                await f.write(await photo.read())
+            saved_photos.append(file_path)
+            
+        update_data["photos"] = saved_photos
 
     updated_room = await service.update_room(room_id, update_data)
     if not updated_room:

@@ -89,6 +89,8 @@ async def add_hotel(
     country:str = Form(...),
     address: str = Form(...),
     description: str = Form(None),
+    latitude: float = Form(None),
+    longitude: float = Form(None),
     photo: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user)
@@ -107,6 +109,8 @@ async def add_hotel(
         country=country,
         address=address,
         description=description,
+        latitude=latitude,
+        longitude=longitude,
         photo=file_location
     )
 
@@ -147,6 +151,8 @@ async def update_hotel(
     country: str | None = Form(None),
     address: str | None = Form(None),
     description: str | None = Form(None),
+    latitude: float | None = Form(None),
+    longitude: float | None = Form(None),
     photo: UploadFile | None = File(None),
     service: HotelService = Depends(HotelService.get_hotel_service),
     admin = Depends(get_admin_user)
@@ -163,6 +169,10 @@ async def update_hotel(
         update_data["address"] = address
     if description is not None:
         update_data["description"] = description
+    if latitude is not None:
+        update_data["latitude"] = latitude
+    if longitude is not None:
+        update_data["longitude"] = longitude
 
     if photo:
         file_name = f"{uuid.uuid4()}_{photo.filename}"

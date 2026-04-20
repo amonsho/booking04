@@ -1,4 +1,4 @@
-from sqlalchemy import Column,Integer,String
+from sqlalchemy import Column,Integer,String,Float
 from sqlalchemy.orm import relationship
 from .conf import BaseModelClass
 
@@ -12,6 +12,8 @@ class Hotel (BaseModelClass):
     city = Column(String,nullable=False)
     address= Column(String,nullable=False)
     description = Column(String)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     
     rooms = relationship("Room", back_populates='hotel')
     reviews = relationship("Review", back_populates='hotel')
