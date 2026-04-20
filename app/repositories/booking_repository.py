@@ -20,12 +20,12 @@ class BookingRepository:
 
     async def check_overlap(self, room_id: int, date_from, date_to):
         from sqlalchemy import and_, or_
-        # Ensure we only check against confirmed bookings (or pending ones if you don't want anyone to hold the room)
-        # Assuming we check all bookings that overlap
+        from app.models.booking import BookingStatus
         result = await self.db.execute(
             select(Booking).where(
                 Booking.room_id == room_id,
                 Booking.is_deleted == False,
+                Booking.status != BookingStatus.CANCELLED,
                 or_(
                     and_(Booking.date_from <= date_from, Booking.date_to >= date_from),
                     and_(Booking.date_from <= date_to, Booking.date_to >= date_to),
@@ -36,8 +36,11 @@ class BookingRepository:
         return result.scalars().first() is not None
 
     async def get_bookings_by_user(self, user_id: int):
+        from sqlalchemy.orm import selectinload
         result = await self.db.execute(
-            select(Booking).where(Booking.user_id == user_id, Booking.is_deleted == False)
+            select(Booking)
+            .options(selectinload(Booking.room).selectinload(Room.hotel))
+            .where(Booking.user_id == user_id, Booking.is_deleted == False)
         )
         return result.scalars().all()
     

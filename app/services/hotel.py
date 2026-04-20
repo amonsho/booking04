@@ -38,8 +38,20 @@ class HotelService:
         return new_hotel
     
     
-    async def get_all_hotel(self, limit: int = 10, offset: int = 0, q_city: str | None = None, q_country: str | None = None):
+    async def get_all_hotel(self, limit: int = 10, offset: int = 0, q: str | None = None, q_city: str | None = None, q_country: str | None = None):
+        from sqlalchemy import or_
         query = select(Hotel).where(Hotel.is_deleted == False)
+        
+        if q:
+            query = query.where(
+                or_(
+                    Hotel.name.ilike(f"%{q}%"),
+                    Hotel.city.ilike(f"%{q}%"),
+                    Hotel.country.ilike(f"%{q}%"),
+                    Hotel.address.ilike(f"%{q}%")
+                )
+            )
+            
         if q_city:
             query = query.where(Hotel.city.ilike(f"%{q_city}%"))
         if q_country:
@@ -57,7 +69,7 @@ class HotelService:
         hotel = result.scalar_one_or_none()
 
         if not hotel:
-            raise HTTPException(status_code=404, detail="Такого hotel нет")
+            raise HTTPException(status_code=404, detail="Отель не найден")
 
         return hotel
 
@@ -115,7 +127,7 @@ class HotelService:
 
 
     async def delete_hotel(self, hotel_id: int):
-        hotel = await self.get_hotel_by_id(hotel_id)
+        hotel = await self.search_hotel_by_id(hotel_id)
         if not hotel:
             return False
         hotel.is_deleted = True

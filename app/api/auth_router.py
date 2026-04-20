@@ -221,5 +221,5 @@ async def verify_email(
     return {"message": "Email verified successfully"}
 
 
-# End of auth router
+
 
