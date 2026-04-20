@@ -5,6 +5,7 @@ from app.db.database import engine, Base
 from app.models import user, room, booking
 from app.api.hotel_router import hotel_router
 from app.models import user, room, booking, hotel
+from app.core.config import settings
 
 
 app = FastAPI()
@@ -26,6 +27,12 @@ async def init_models():
                         "ALTER TABLE rooms ADD COLUMN is_available BOOLEAN DEFAULT 1;"
                     )
                 )
+            if "photos" not in existing_cols:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE rooms ADD COLUMN photos TEXT;"
+                    )
+                )
 
 # -0-0-0-0--9--0-0-0-API AMONSHO -0-0-0-0-0-0
 
@@ -37,30 +44,24 @@ from app.api.review_router import router as review_router
 from app.auth.google import router as google_router
 from app.api.payment_router import router as payment_router
 
-from fastapi.staticfiles import StaticFiles
-app.mount("/media", StaticFiles(directory="media"), name="media")
-# app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
-
-from starlette.middleware.sessions import SessionMiddleware
-from app.core.config import settings
-
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.SESSION_SECRET_KEY,
-    session_cookie="session",
-    same_site="lax",
-    https_only=False,
-)
-
 # Allow frontend (localhost) to access API during development
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL or "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+        settings.FRONTEND_URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/media", StaticFiles(directory="media"), name="media")
+# app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
 
 app.include_router(auth_router)
 app.include_router(user_router)

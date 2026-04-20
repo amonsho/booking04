@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
-from app.schemas.booking import BookingCreate, BookingResponse
+from app.schemas.booking import BookingCreate, BookingResponse, BookingWithDetailsResponse
 from app.services.booking_service import BookingService
 from app.auth.dependencies import get_current_user, get_admin_user
 from app.models.booking import Booking
@@ -31,7 +31,7 @@ async def create_booking(
     )
 
 
-@booking_router.get("/me", response_model=list[BookingResponse])
+@booking_router.get("/me", response_model=list[BookingWithDetailsResponse])
 async def get_my_bookings(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -124,7 +124,7 @@ async def cancel_booking(
     stripe_service = StripeService(payment_repo)
 
     refund = await stripe_service.refund_payment(
-        payment.provider_payment_id  # ← ВАЖНО (может быть как cs_test, так и pi_test)
+        payment.provider_payment_id 
     )
 
     # 7. обновляем booking
