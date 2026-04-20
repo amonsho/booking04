@@ -4,15 +4,15 @@ from sqlalchemy import text
 from app.db.database import engine, Base
 from app.models import user, room, booking
 from app.api.hotel_router import hotel_router
-<<<<<<< HEAD
+
 from app.models import user, room, booking, hotel, messages, review, payment
-=======
+
 from app.models import user, room, booking, hotel
 from app.core.config import settings
->>>>>>> 6cdf953d24a70c7f7cd3d438ab4f66be46e9d6d8
 
 
 app = FastAPI()
+
 
 @app.on_event("startup")
 async def init_models():
@@ -27,28 +27,29 @@ async def init_models():
             existing_cols = {r[1] for r in rows}  # PRAGMA: (cid, name, type, ...)
             if "is_available" not in existing_cols:
                 await conn.execute(
-                    text(
-                        "ALTER TABLE rooms ADD COLUMN is_available BOOLEAN DEFAULT 1;"
-                    )
+                    text("ALTER TABLE rooms ADD COLUMN is_available BOOLEAN DEFAULT 1;")
                 )
-<<<<<<< HEAD
-            
+
             # Simple migration for messages table typos
             res = await conn.execute(text("PRAGMA table_info(messages);"))
             rows = res.fetchall()
-            existing_cols = {r[1] for r in rows}
-            if "semder_id" in existing_cols:
-                await conn.execute(text("ALTER TABLE messages RENAME COLUMN semder_id TO sender_id;"))
-            if "receiver_id" in existing_cols:
-                await conn.execute(text("ALTER TABLE messages RENAME COLUMN receiver_id TO chat_id;"))
-=======
-            if "photos" not in existing_cols:
+            msg_cols = {r[1] for r in rows}
+            if "semder_id" in msg_cols:
                 await conn.execute(
-                    text(
-                        "ALTER TABLE rooms ADD COLUMN photos TEXT;"
-                    )
+                    text("ALTER TABLE messages RENAME COLUMN semder_id TO sender_id;")
                 )
->>>>>>> 6cdf953d24a70c7f7cd3d438ab4f66be46e9d6d8
+            if "receiver_id" in msg_cols:
+                await conn.execute(
+                    text("ALTER TABLE messages RENAME COLUMN receiver_id TO chat_id;")
+                )
+
+            # Re-check rooms columns before adding `photos` (avoid using message cols)
+            res = await conn.execute(text("PRAGMA table_info(rooms);"))
+            rows = res.fetchall()
+            existing_cols = {r[1] for r in rows}
+            if "photos" not in existing_cols:
+                await conn.execute(text("ALTER TABLE rooms ADD COLUMN photos TEXT;"))
+
 
 # -0-0-0-0--9--0-0-0-API AMONSHO -0-0-0-0-0-0
 
@@ -62,13 +63,14 @@ from app.api.payment_router import router as payment_router
 
 # Allow frontend (localhost) to access API during development
 from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://0.0.0.0:3000",
-        settings.FRONTEND_URL
+        settings.FRONTEND_URL,
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -76,6 +78,7 @@ app.add_middleware(
 )
 
 from fastapi.staticfiles import StaticFiles
+
 app.mount("/media", StaticFiles(directory="media"), name="media")
 # app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
 
@@ -93,14 +96,9 @@ from app.api.room_router import room_router
 from app.api.booking_router import booking_router as b_r
 from app.api.ai_router import router as ai_router
 from app.api.chat import chat_router
+
 app.include_router(hotel_router)
 app.include_router(room_router)
 app.include_router(b_r)
 app.include_router(ai_router)
 app.include_router(chat_router)
-
-
-
-
-
-
