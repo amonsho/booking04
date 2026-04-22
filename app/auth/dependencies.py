@@ -61,7 +61,7 @@ async def get_admin_user(token: str=Depends(oauth2_scheme), db: AsyncSession=Dep
         algorithms=[settings.ALGORITHM]
     )
 
-    user_id: int = payload.get("sub")
+    user_id =  int(payload.get("sub"))
 
     repo = UserRepository(db)
     current_user = await repo.get_by_id(user_id)

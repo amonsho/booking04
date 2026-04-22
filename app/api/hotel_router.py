@@ -213,6 +213,3 @@ async def delete_hotel(
     return {"message": "Hotel deleted successfully"}
 
 
-
-# NOTE: duplicate routes removed — reports/hotels_count and search_hotels
-# are already defined above at lines 42 and 37 respectively.
