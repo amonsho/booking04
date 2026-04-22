@@ -114,7 +114,12 @@ async def google_link(request: Request, token: str, db: AsyncSession = Depends(g
     # Store user id in session for the callback
     request.session["link_user_id"] = current_user.id
     
-    redirect_uri = "http://localhost:8000/auth/google/link/callback"
+    # Use settings if available, otherwise construct from current base_url
+    if settings.GOOGLE_REDIRECT_URI:
+        redirect_uri = settings.GOOGLE_REDIRECT_URI.replace("/callback", "/link/callback")
+    else:
+        redirect_uri = f"{str(request.base_url).rstrip('/')}/auth/google/link/callback"
+        
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 from app.auth.dependencies import get_current_user
