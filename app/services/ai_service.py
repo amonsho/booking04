@@ -10,7 +10,14 @@ class AIService:
         else:
             self.client = None
 
-    async def generate_response(self, prompt: str, system_prompt: str = "Вы — универсальный полезный помощник. Вы можете отвечать на любые вопросы пользователя, давать советы и помогать с различными задачами, включая бронирование отелей в сервисе 'Booking04'."):
+    async def generate_response(self, prompt: str, user_role: str = "user"):
+        system_prompt = f"Вы — универсальный полезный помощник сервиса 'Booking04'. "
+        if user_role == "admin":
+            system_prompt += "Вы общаетесь с АДМИНИСТРАТОРОМ. Если он спрашивает о сообщениях пользователей, направьте его в 'Админ-панель -> Чат'. "
+        else:
+            system_prompt += "Вы общаетесь с ПОЛЬЗОВАТЕЛЕМ. Если он спрашивает о своих сообщениях, направьте его в 'Профиль -> Мои сообщения'. "
+        
+        system_prompt += "Вы можете отвечать на вопросы, давать советы и помогать с бронированием."
         if not self.client:
             return "AI Service is not configured. Please add GEMINI_API_KEY to your environment."
         
@@ -30,6 +37,12 @@ class AIService:
                 )
                 return response.text
             except Exception as e2:
-                return f"Error communicating with Gemini AI: {str(e)}"
+                error_msg = str(e)
+                if "503" in error_msg or "high demand" in error_msg.lower():
+                    return "Извините, сервис ИИ сейчас перегружен. Пожалуйста, попробуйте позже или дождитесь ответа администратора."
+                return f"Ошибка связи с ИИ: {error_msg}"
+
+    def get_support_response(self, prompt: str, user_role: str = "user"):
+        return self.generate_response(prompt, user_role)
 
 ai_service = AIService()
