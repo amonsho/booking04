@@ -16,6 +16,7 @@ class RoomService:
             select(Room).where(
                 Room.hotel_id == room.hotel_id,
                 Room.room_type == room.room_type,
+                Room.number_room == room.number_room,
                 Room.is_deleted == False
             )
         )
@@ -23,7 +24,7 @@ class RoomService:
         if room_search:
             raise HTTPException(
                 status_code=400,
-                detail="Комната уже есть в этом отеле!"
+                detail="Комната с таким номером и типом уже есть в этом отеле!"
             )
 
         room_dict = room.model_dump()
@@ -163,16 +164,15 @@ class RoomService:
         await self.db.commit()
         return {"deleted": True, "id": room_id}
     
-    async def search_room(max_price:float,min_prise:float,db:AsyncSession):
-        room = select(Room).where(Room.is_deleted == False)
+    @staticmethod
+    async def search_room(min_price: float, max_price: float, db: AsyncSession):
+        query = select(Room).where(Room.is_deleted == False)
         
-        if min_prise is not None:
-            room = room.where(Room.price >= min_prise)
+        if min_price is not None:
+            query = query.where(Room.price >= min_price)
             
         if max_price is not None:
-            room = room.where(Room.price <= max_price)
+            query = query.where(Room.price <= max_price)
             
-        result = await db.execute(room)
+        result = await db.execute(query)
         return result.scalars().all()
-    
-    

@@ -2,12 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.db.database import engine, Base
-from app.models import user, room, booking
-from app.api.hotel_router import hotel_router
-
 from app.models import user, room, booking, hotel, messages, review, payment
-
-from app.models import user, room, booking, hotel
 from app.core.config import settings
 
 
@@ -22,15 +17,44 @@ async def init_models():
         # If the table was created before adding columns in the model,
         # `create_all()` won't modify the schema and inserts will fail.
         if "sqlite" in str(engine.url):
+
+            # ── ROOMS table migrations ──────────────────────────────────────
             res = await conn.execute(text("PRAGMA table_info(rooms);"))
             rows = res.fetchall()
-            existing_cols = {r[1] for r in rows}  # PRAGMA: (cid, name, type, ...)
+            existing_cols = {r[1] for r in rows}
+
             if "is_available" not in existing_cols:
                 await conn.execute(
                     text("ALTER TABLE rooms ADD COLUMN is_available BOOLEAN DEFAULT 1;")
                 )
+            if "photos" not in existing_cols:
+                await conn.execute(text("ALTER TABLE rooms ADD COLUMN photos TEXT;"))
+            # FIX: add is_deleted if missing (was not migrated before)
+            if "is_deleted" not in existing_cols:
+                await conn.execute(
+                    text("ALTER TABLE rooms ADD COLUMN is_deleted BOOLEAN DEFAULT 0;")
+                )
 
-            # Simple migration for messages table typos
+            # ── HOTELS table migrations ─────────────────────────────────────
+            res = await conn.execute(text("PRAGMA table_info(hotels);"))
+            rows = res.fetchall()
+            hotel_cols = {r[1] for r in rows}
+
+            # FIX: add is_deleted if missing
+            if "is_deleted" not in hotel_cols:
+                await conn.execute(
+                    text("ALTER TABLE hotels ADD COLUMN is_deleted BOOLEAN DEFAULT 0;")
+                )
+            if "latitude" not in hotel_cols:
+                await conn.execute(
+                    text("ALTER TABLE hotels ADD COLUMN latitude REAL;")
+                )
+            if "longitude" not in hotel_cols:
+                await conn.execute(
+                    text("ALTER TABLE hotels ADD COLUMN longitude REAL;")
+                )
+
+            # ── MESSAGES table migrations ───────────────────────────────────
             res = await conn.execute(text("PRAGMA table_info(messages);"))
             rows = res.fetchall()
             msg_cols = {r[1] for r in rows}
@@ -42,13 +66,6 @@ async def init_models():
                 await conn.execute(
                     text("ALTER TABLE messages RENAME COLUMN receiver_id TO chat_id;")
                 )
-
-            # Re-check rooms columns before adding `photos` (avoid using message cols)
-            res = await conn.execute(text("PRAGMA table_info(rooms);"))
-            rows = res.fetchall()
-            existing_cols = {r[1] for r in rows}
-            if "photos" not in existing_cols:
-                await conn.execute(text("ALTER TABLE rooms ADD COLUMN photos TEXT;"))
 
 
 # -0-0-0-0--9--0-0-0-API AMONSHO -0-0-0-0-0-0
@@ -70,6 +87,10 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://0.0.0.0:3000",
+        "http://192.168.1.107:3000",
+        "http://192.168.1.108:3000",
+        "http://192.168.1.109:3000",
+        "http://192.168.1.110:3000",
         settings.FRONTEND_URL,
     ],
     allow_credentials=True,

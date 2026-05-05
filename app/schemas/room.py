@@ -4,7 +4,7 @@ from typing import Optional, List, Any
 class RoomBase(BaseModel):
     hotel_id: int
     room_type: str
-    number_room: str
+    number_room: int
     price: float
     wifi: bool
     photos: List[str] = []
@@ -30,7 +30,7 @@ class RoomResponse(RoomBase):
 class RoomUpdate(BaseModel):
     hotel_id: Optional[int] = None
     room_type: Optional[str] = None
-    number_room: Optional[str] = None
+    number_room: Optional[int] = None
     price: Optional[float] = None
     wifi: Optional[bool] = None
     photos: Optional[list[str]] = None

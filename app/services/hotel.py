@@ -134,7 +134,8 @@ class HotelService:
         await self.db.commit()
         return True
     
-    async def search_hotel(self, q_hotel:str):
+    @staticmethod
+    async def search_hotel(q_hotel: str, db: AsyncSession):
         from sqlalchemy import or_
         query = select(Hotel).where(
             Hotel.is_deleted == False,
@@ -145,7 +146,7 @@ class HotelService:
                 Hotel.address.ilike(f'%{q_hotel}%')
             )
         )
-        result = await self.db.execute(query)
+        result = await db.execute(query)
         return result.scalars().all()
     
     async def autocomplete_city(self, q_city: str):
