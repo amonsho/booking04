@@ -27,11 +27,12 @@ async def get_all_hotels(
     offset: int = 0,
     city: str | None = None,
     country: str | None = None,
+    q: str | None = None,
     db: AsyncSession = Depends(get_db),
     user = Depends(get_current_user)
 ):
     service = HotelService(db)
-    hotels = await service.get_all_hotel(limit=limit, offset=offset, q_city=city, q_country=country)
+    hotels = await service.get_all_hotel(limit=limit, offset=offset, q=q, q_city=city, q_country=country)
     return hotels
 
 @hotel_router.get('/search_hotels')
