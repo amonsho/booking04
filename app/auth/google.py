@@ -62,7 +62,11 @@ async def google_register_post(data: GoogleToken, db: AsyncSession = Depends(get
 
 @router.get("/register")
 async def google_register(request: Request):
-    redirect_uri = "http://localhost:8000/auth/google/callback"
+    if settings.GOOGLE_REDIRECT_URI:
+        redirect_uri = settings.GOOGLE_REDIRECT_URI
+    else:
+        redirect_uri = f"{str(request.base_url).rstrip('/')}/auth/google/callback"
+        
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
