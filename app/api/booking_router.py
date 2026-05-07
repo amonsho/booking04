@@ -13,6 +13,7 @@ from app.models.booking import BookingStatus
 from app.models.enums import PaymentStatus
 from app.services.stripe_service import StripeService
 from app.models.payment import Payment
+from app.models.user import User
 
 booking_router = APIRouter(prefix="/booking", tags=["Booking"])
 
@@ -21,7 +22,7 @@ booking_router = APIRouter(prefix="/booking", tags=["Booking"])
 async def create_booking(
     booking: BookingCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     service = BookingService(db)
 
