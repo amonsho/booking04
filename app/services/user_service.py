@@ -21,9 +21,15 @@ class UserService:
 
         if data.name:
             user.name = data.name
-
-        # if data.email:
-        #     user.email = data.email
+        
+        if data.first_name:
+            user.first_name = data.first_name
+        
+        if data.last_name:
+            user.last_name = data.last_name
+            
+        if data.phone:
+            user.phone = data.phone
 
         await self.repo.update(user)
 

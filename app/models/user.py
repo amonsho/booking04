@@ -13,6 +13,9 @@ class User(BaseModelClass):
     google_id = Column(String, unique=True, nullable=True)
 
     avatar = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
 
     bookings = relationship("Booking", back_populates="user")

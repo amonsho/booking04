@@ -34,6 +34,9 @@ class UserRead(BaseModel):
     email:EmailStr
     role: UserRole
     avatar: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
     google_id: str | None = None
     is_verified: bool = False
 
