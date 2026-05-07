@@ -4,6 +4,7 @@ from sqlalchemy import text
 from app.db.database import engine, Base
 from app.models import user, room, booking, hotel, messages, review, payment
 from app.core.config import settings
+from starlette.middleware.sessions import SessionMiddleware
 
 
 app = FastAPI()
@@ -67,6 +68,18 @@ async def init_models():
                     text("ALTER TABLE messages RENAME COLUMN receiver_id TO chat_id;")
                 )
 
+            # ── USERS table migrations ──────────────────────────────────────
+            res = await conn.execute(text("PRAGMA table_info(users);"))
+            rows = res.fetchall()
+            user_cols = {r[1] for r in rows}
+            
+            if "first_name" not in user_cols:
+                await conn.execute(text("ALTER TABLE users ADD COLUMN first_name TEXT;"))
+            if "last_name" not in user_cols:
+                await conn.execute(text("ALTER TABLE users ADD COLUMN last_name TEXT;"))
+            if "phone" not in user_cols:
+                await conn.execute(text("ALTER TABLE users ADD COLUMN phone TEXT;"))
+
 
 # -0-0-0-0--9--0-0-0-API AMONSHO -0-0-0-0-0-0
 
@@ -97,6 +110,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 from fastapi.staticfiles import StaticFiles
 

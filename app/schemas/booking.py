@@ -32,7 +32,7 @@ class BookingResponse(BaseModel):
     date_to: date
 
     status: str
-    total_price: int | None
+    total_price: float | None
     guests: int
     
     model_config = {"from_attributes": True}
