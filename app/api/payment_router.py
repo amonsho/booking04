@@ -17,7 +17,7 @@ import stripe
 from app.core.config import settings
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-router = APIRouter(prefix="/payment", tags=["Payment"])
+router = APIRouter(prefix="/payment", tags=["Payment"], redirect_slashes=False)
 
 @router.post("/payments/create")
 async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), current_user=Depends(get_current_user)):
@@ -45,10 +45,11 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 
 @router.post("/payments/webhook/")
 @router.post("/payments/webhook")
-async def stripe_webhook(request: Request, db=Depends(get_db)):
-
+async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    print("--- Webhook received! ---")
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
+    print(f"Signature: {sig_header}")
 
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
