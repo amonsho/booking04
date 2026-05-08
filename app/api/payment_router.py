@@ -43,6 +43,7 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 
     return result
 
+@router.post("/payments/webhook/")
 @router.post("/payments/webhook")
 async def stripe_webhook(request: Request, db=Depends(get_db)):
 
