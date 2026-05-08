@@ -46,10 +46,16 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 @router.post("/payments/webhook/")
 @router.post("/payments/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    print("--- Webhook received! ---")
+    print(f"--- Webhook received! Method: {request.method} ---")
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
     print(f"Signature: {sig_header}")
+
+@router.get("/payments/webhook")
+async def debug_webhook_get(request: Request):
+    print("!!! WARNING: Received GET request on webhook endpoint !!!")
+    print(f"Headers: {request.headers}")
+    return {"message": "Webhooks must be POST, but you sent a GET. Check for redirects (http->https or trailing slashes)."}
 
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
