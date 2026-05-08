@@ -17,7 +17,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def create_room(
     hotel_id: int = Form(...),
     room_type: str = Form(...),
-    number_room: int = Form(...),
+    number_room: str = Form(...),
     price: float = Form(description="Цена должна быть больше 0"),
     wifi: bool = Form(...),
     photos: list[UploadFile] = File(...),
@@ -101,7 +101,7 @@ async def update_room(
     price: float = Form(None),
     wifi: bool = Form(None),
     hotel_id: int = Form(None),
-    number_room: int = Form(None),
+    number_room: str = Form(None),
     photos: list[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     admin = Depends(get_admin_user),
