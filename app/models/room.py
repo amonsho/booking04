@@ -7,7 +7,7 @@ class Room(BaseModelClass):
 
     hotel_id = Column(Integer, ForeignKey("hotels.id"))
     room_type = Column(String)
-    number_room = Column(Integer)
+    number_room = Column(String)
     price = Column(Float)
     wifi = Column(Boolean)
     photos = Column(String)
