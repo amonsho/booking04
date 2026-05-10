@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends,HTTPException,Request
 from app.repositories.payment_repo import PaymentRepository
 from app.repositories.booking_repository import BookingRepository
@@ -17,7 +18,7 @@ import stripe
 from app.core.config import settings
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-router = APIRouter(prefix="/payment", tags=["Payment"], redirect_slashes=False)
+router = APIRouter(prefix="/payment", tags=["Payment"])
 
 @router.post("/payments/create")
 async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), current_user=Depends(get_current_user)):
@@ -43,84 +44,72 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 
     return result
 
-@router.post("/payments/webhook/")
 @router.post("/payments/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    print(f"--- Webhook received! Method: {request.method} ---")
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-    print(f"Signature: {sig_header}")
-
-@router.get("/payments/webhook")
-async def debug_webhook_get(request: Request):
-    print("!!! WARNING: Received GET request on webhook endpoint !!!")
-    print(f"Headers: {request.headers}")
-    return {"message": "Webhooks must be POST, but you sent a GET. Check for redirects (http->https or trailing slashes)."}
-
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
-        )
-    except ValueError as e:
-        print(f"Webhook error: invalid payload. Payload: {payload}, Error: {e}")
-        raise HTTPException(status_code=400, detail="invalid payload")
-    
-    except stripe.error.SignatureVerificationError as e:
-        print(f"Webhook error: invalid signature. Secret used: {endpoint_secret}, Error: {e}")
-        raise HTTPException(status_code=400, detail="invalid signature")
-    except Exception as e:
-        print(f"Webhook error: unknown exception. Error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    if event.type == "checkout.session.completed":
-
-        session = event.data.object
-
-        metadata = getattr(session, "metadata", {}) or {}
+    # Логгируем в файл для надежности
+    with open("webhook.log", "a") as f:
+        f.write(f"\n--- {datetime.now()} Webhook received ---\n")
         
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature")
+        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
         try:
-            booking_id = metadata["booking_id"] if "booking_id" in metadata else None
-        except TypeError:
-            booking_id = getattr(metadata, "booking_id", None)
-
-        if not booking_id:
-            raise HTTPException(status_code=404, detail="Booking not found in metadata")
-
-        repo = BookingRepository(db)
-        booking = await repo.get_by_id(int(booking_id))
-
-        if not booking:
-            raise HTTPException(status_code=404, detail="Booking not found in db")
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+            f.write(f"Event type: {event.type}\n")
+        except Exception as e:
+            f.write(f"Error constructing event: {str(e)}\n")
+            raise HTTPException(status_code=400, detail=str(e))
         
-        # We must use proper Enum values (lowercase values defined in Enums)
-        from app.models.booking import BookingStatus
-        if hasattr(booking, 'status') and booking.status == BookingStatus.CONFIRMED:
-            return {"status":"already processed"}
-        
-        booking.status = BookingStatus.CONFIRMED
-        db.add(booking)
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            metadata = session.get("metadata", {})
+            booking_id = metadata.get("booking_id")
+            
+            f.write(f"Session ID: {session.id}\n")
+            f.write(f"Booking ID from metadata: {booking_id}\n")
 
-        # Also update payment status
-        from sqlalchemy import select
-        from app.models.payment import Payment
-        from app.models.enums import PaymentStatus
-        
-        payment_query = await db.execute(select(Payment).where(Payment.provider_payment_id == session.id))
-        payment = payment_query.scalar_one_or_none()
-        
-        if payment:
-            payment.status = PaymentStatus.completed
-            # Swap the Session ID (cs_...) with the actual Payment Intent ID (pi_...) for refunds
-            if hasattr(session, "payment_intent") and session.payment_intent:
-                payment.provider_payment_id = session.payment_intent
-            db.add(payment)
+            if not booking_id:
+                f.write("Error: No booking_id in metadata\n")
+                return {"status": "no booking_id"}
 
-        await db.commit()
-        await db.refresh(booking)
+            repo = BookingRepository(db)
+            booking = await repo.get_by_id(int(booking_id))
 
-    return {"status":"ok"}
+            if not booking:
+                f.write(f"Error: Booking {booking_id} not found in DB\n")
+                return {"status": "booking not found"}
+            
+            f.write(f"Current status: {booking.status}\n")
+            
+            from app.models.booking import BookingStatus
+            if booking.status == BookingStatus.CONFIRMED:
+                f.write("Already confirmed.\n")
+                return {"status": "already processed"}
+            
+            booking.status = BookingStatus.CONFIRMED
+            db.add(booking)
+            f.write("Updating status to confirmed...\n")
+
+            # Update payment
+            from sqlalchemy import select
+            from app.models.payment import Payment
+            from app.models.enums import PaymentStatus
+            
+            payment_query = await db.execute(select(Payment).where(Payment.provider_payment_id == session.id))
+            payment = payment_query.scalar_one_or_none()
+            
+            if payment:
+                payment.status = PaymentStatus.completed
+                if session.get("payment_intent"):
+                    payment.provider_payment_id = session.payment_intent
+                db.add(payment)
+                f.write("Payment record updated.\n")
+
+            await db.commit()
+            f.write("🎉 Database COMMIT successful!\n")
+            
+    return {"status": "ok"}
 
 @router.post("/payments/{payment_id}/refund")
 async def refund_payment(payment_id: int, db:AsyncSession = Depends(get_db)):
