@@ -66,11 +66,14 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         if event.type == "checkout.session.completed":
             session = event.data.object
             
-            # Используем прямой доступ к атрибутам, так как .get() не поддерживается
+            # Максимально безопасное получение метаданных
             metadata = getattr(session, "metadata", {})
-            booking_id = metadata.get("booking_id") if metadata else None
+            if isinstance(metadata, dict):
+                booking_id = metadata.get("booking_id")
+            else:
+                booking_id = getattr(metadata, "booking_id", None)
             
-            f.write(f"Metadata found: {metadata}\n")
+            f.write(f"Metadata Type: {type(metadata)}\n")
             f.write(f"Booking ID: {booking_id}\n")
             f.flush()
 
