@@ -46,9 +46,8 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 
 @router.post("/payments/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    # Логгируем в файл для надежности
     with open("webhook.log", "a") as f:
-        f.write(f"\n--- {datetime.now()} Webhook received ---\n")
+        f.write(f"\n[{datetime.now()}] === NEW WEBHOOK EVENT ===\n")
         
         payload = await request.body()
         sig_header = request.headers.get("stripe-signature")
@@ -56,40 +55,37 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
         try:
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-            f.write(f"Event type: {event.type}\n")
+            f.write(f"Event ID: {event.id}, Type: {event.type}\n")
         except Exception as e:
-            f.write(f"Error constructing event: {str(e)}\n")
-            raise HTTPException(status_code=400, detail=str(e))
+            f.write(f"CRITICAL: Signature verification failed: {str(e)}\n")
+            return {"status": "error", "message": str(e)}
         
         if event.type == "checkout.session.completed":
             session = event.data.object
+            f.write(f"Session Object: {session}\n") # Запишем всё, что прислал Stripe
+            
             metadata = session.get("metadata", {})
             booking_id = metadata.get("booking_id")
-            
-            f.write(f"Session ID: {session.id}\n")
-            f.write(f"Booking ID from metadata: {booking_id}\n")
+            f.write(f"Extracted metadata: {metadata}\n")
+            f.write(f"Extracted booking_id: {booking_id}\n")
 
             if not booking_id:
-                f.write("Error: No booking_id in metadata\n")
-                return {"status": "no booking_id"}
+                f.write("FAIL: booking_id is missing in metadata!\n")
+                return {"status": "error", "message": "no booking_id"}
 
             repo = BookingRepository(db)
             booking = await repo.get_by_id(int(booking_id))
 
             if not booking:
-                f.write(f"Error: Booking {booking_id} not found in DB\n")
-                return {"status": "booking not found"}
+                f.write(f"FAIL: Booking with ID {booking_id} not found in Database!\n")
+                return {"status": "error", "message": "booking not found"}
             
-            f.write(f"Current status: {booking.status}\n")
+            f.write(f"SUCCESS: Found booking in DB. Current status: {booking.status}\n")
             
             from app.models.booking import BookingStatus
-            if booking.status == BookingStatus.CONFIRMED:
-                f.write("Already confirmed.\n")
-                return {"status": "already processed"}
-            
             booking.status = BookingStatus.CONFIRMED
             db.add(booking)
-            f.write("Updating status to confirmed...\n")
+            f.write(f"ACTION: Changing status to {BookingStatus.CONFIRMED}\n")
 
             # Update payment
             from sqlalchemy import select
@@ -101,13 +97,15 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             
             if payment:
                 payment.status = PaymentStatus.completed
-                if session.get("payment_intent"):
-                    payment.provider_payment_id = session.payment_intent
+                f.write(f"ACTION: Payment record {payment.id} updated to completed.\n")
                 db.add(payment)
-                f.write("Payment record updated.\n")
+            else:
+                f.write(f"WARN: No payment record found for session {session.id}\n")
 
             await db.commit()
-            f.write("🎉 Database COMMIT successful!\n")
+            f.write("FINISH: Database COMMIT successful! 🚀\n")
+        else:
+            f.write(f"SKIP: Ignoring event type {event.type}\n")
             
     return {"status": "ok"}
 
