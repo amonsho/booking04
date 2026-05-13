@@ -44,6 +44,56 @@ async def create_payment(data:CreatePaymentSchema, session=Depends(get_db), curr
 
     return result
 
+
+@router.get("/payments/verify")
+async def verify_payment(session_id: str, db: AsyncSession = Depends(get_db)):
+    """Fallback: verify payment directly with Stripe when webhook fails."""
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid session: {str(e)}")
+
+    if session.status != "complete" or session.payment_status != "paid":
+        return {"status": "pending", "message": "Payment not completed"}
+
+    # Get booking_id from metadata
+    try:
+        booking_id = session.metadata["booking_id"]
+    except (KeyError, TypeError):
+        raise HTTPException(status_code=400, detail="No booking_id in session metadata")
+
+    from sqlalchemy import select
+    from app.models.enums import PaymentStatus
+
+    # Find booking
+    repo = BookingRepository(db)
+    booking = await repo.get_by_id(int(booking_id))
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Already confirmed — skip
+    if booking.status == BookingStatus.CONFIRMED:
+        return {"status": "already_confirmed", "booking_id": booking_id}
+
+    # Update booking status
+    booking.status = BookingStatus.CONFIRMED
+    db.add(booking)
+
+    # Update payment status
+    payment_query = await db.execute(
+        select(Payment).where(Payment.provider_payment_id == session_id)
+    )
+    payment = payment_query.scalar_one_or_none()
+    if payment:
+        payment.status = PaymentStatus.completed
+        if session.payment_intent:
+            payment.provider_payment_id = session.payment_intent
+        db.add(payment)
+
+    await db.commit()
+    return {"status": "confirmed", "booking_id": booking_id}
+
+
 @router.post("/payments/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     with open("webhook.log", "a") as f:

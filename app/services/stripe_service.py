@@ -25,7 +25,7 @@ class StripeService:
                 },
                 "quantity": 1,
             }],
-            success_url=settings.FRONTEND_URL + "/success",
+            success_url=settings.FRONTEND_URL + "/success?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=settings.FRONTEND_URL + "/cancel",
 
             metadata={
