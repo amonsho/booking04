@@ -54,24 +54,7 @@ async def get_user_by_token(token: str, db: AsyncSession):
 async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     return await get_user_by_token(token, db)
     
-async def get_admin_user(token: str=Depends(oauth2_scheme), db: AsyncSession=Depends(get_db)):
-    payload = jwt.decode(
-        token,
-        settings.SECRET_KEY,
-        algorithms=[settings.ALGORITHM]
-    )
-
-    user_id =  int(payload.get("sub"))
-
-    repo = UserRepository(db)
-    current_user = await repo.get_by_id(user_id)
-
-    if not current_user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-    
+async def get_admin_user(current_user = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=403, 
