@@ -133,51 +133,60 @@ async def google_link_callback(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    # Retrieve user_id from session
-    user_id = request.session.get("link_user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User session not found")
-    
-    # Clean up session
-    request.session.pop("link_user_id", None)
-    
+    import traceback
     try:
-        token = await oauth.google.authorize_access_token(request)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Google auth error")
-    
-    # user info
-    user_info = None
-    if "id_token" in token:
+        # Retrieve user_id from session
+        user_id = request.session.get("link_user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User session not found")
+        
+        # Clean up session
+        request.session.pop("link_user_id", None)
+        
         try:
-            user_info = await oauth.google.parse_id_token(request, token)
-        except Exception:
-            user_info = None
-            
-    if not user_info:
-        resp = await oauth.google.get(
-            "https://openidconnect.googleapis.com/v1/userinfo",
-            token=token
-        )
-        user_info = resp.json()
+            token = await oauth.google.authorize_access_token(request)
+        except Exception as e:
+            print("[DEBUG] Authorize access token error:", str(e))
+            raise HTTPException(status_code=400, detail=f"Google auth error: {str(e)}")
+        
+        # user info
+        user_info = None
+        if "id_token" in token:
+            try:
+                user_info = await oauth.google.parse_id_token(request, token)
+            except Exception as e:
+                print("[DEBUG] Parse ID token error:", str(e))
+                user_info = None
+                
+        if not user_info:
+            resp = await oauth.google.get(
+                "https://openidconnect.googleapis.com/v1/userinfo",
+                token=token
+            )
+            user_info = resp.json()
 
-    google_id = user_info.get("sub")
-    if not google_id:
-        raise HTTPException(status_code=400, detail="No google_id")
+        google_id = user_info.get("sub")
+        if not google_id:
+            raise HTTPException(status_code=400, detail="No google_id")
 
-    repo = UserRepository(db)
-    # Fetch the user using the ID from session
-    current_user = await repo.get_by_id(user_id)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        repo = UserRepository(db)
+        # Fetch the user using the ID from session
+        current_user = await repo.get_by_id(int(user_id))
+        if not current_user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    service = GoogleService(repo)
-    try:
-        await service.link_google(current_user, google_id)
-        print(f"[DEBUG] User {current_user.email} linked to Google ID {google_id}")
+        service = GoogleService(repo)
+        try:
+            await service.link_google(current_user, google_id)
+            print(f"[DEBUG] User {current_user.email} linked to Google ID {google_id}")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        # Redirect back to the frontend profile page
+        frontend_profile_url = f"{settings.FRONTEND_URL}/profile"
+        return RedirectResponse(url=frontend_profile_url)
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    # Redirect back to the frontend profile page
-    frontend_profile_url = f"{settings.FRONTEND_URL}/profile"
-    return RedirectResponse(url=frontend_profile_url)
+        print("[CRITICAL ERROR in link callback]:", traceback.format_exc())
+        return {"500_error_debug": str(e), "traceback": traceback.format_exc()}
